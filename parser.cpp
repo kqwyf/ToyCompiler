@@ -1,4 +1,8 @@
 #include <cstring>
+#include <string>
+#include <map>
+
+using namespace std;
 
 #include "parser.h"
 
@@ -27,22 +31,31 @@ const int DATATYPE_KEYWORDS_NUM = 4;
 const char *(DATATYPE_KEYWORDS[DATATYPE_KEYWORDS_NUM]) = {"int", "float", "bool", "struct"};
 const DataType DATATYPE_KEYWORD_CODES[DATATYPE_KEYWORDS_NUM] = {INT, FLOAT, BOOL, STRUCT};
 
-const SymbolTableEntry templateEntry = {
+const TokenTableEntry templateTokenEntry = {
     NONE, // type
-    {0}, // attr
+    {0} // attr
 #ifdef MATCH_SOURCE
-    0, // start
+    ,0, // start
     0 // end
 #endif
 };
+const SymbolTableEntry templateSymbolEntry {0};
 
-int consumeIDKW(const char *s, SymbolTable &table);
-int consumeOP(const char *s, SymbolTable &table);
-int consumeDL(const char *s, SymbolTable &table);
-int consumeCS(const char *s, SymbolTable &table);
-int consumeCM(const char *s, SymbolTable &table);
+map<string, int> identifierMap;
+map<int, int> intConstantMap;
+map<double, int> floatConstantMap;
 
-int lexicalParse(const char *s, int l, SymbolTable &table) {
+int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable symbolTable);
+int consumeOP(const char *s, TokenTable &tokenTable);
+int consumeDL(const char *s, TokenTable &tokenTable);
+int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable symbolTable);
+int consumeCM(const char *s, TokenTable &tokenTable);
+
+int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable) {
+    identifierMap.clear();
+    intConstantMap.clear();
+    floatConstantMap.clear();
+    clearTable(tokenTable, symbolTable);
     int i = 0;
     while(i < l) {
         // skip blank characters
@@ -51,36 +64,41 @@ int lexicalParse(const char *s, int l, SymbolTable &table) {
         // judge the type of token by its first character
         int tokenLength = -1;
         if((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z') || s[i] == '_') // identifier or keyword
-            tokenLength = consumeIDKW(s + i, table);
+            tokenLength = consumeIDKW(s + i, tokenTable, symbolTable);
         else if(s[i] == '/' && s[i + 1] == '*') // comment (must prior to operator)
-            tokenLength = consumeCM(s + i, table);
+            tokenLength = consumeCM(s + i, tokenTable);
         else if(strchr(OP_START, s[i]) != NULL       // operator ("==" is judged independently
                 || (s[i] == '=' && s[i + 1] == '=')) // to be distinguished with delimiter "=")
-            tokenLength = consumeOP(s + i, table);
+            tokenLength = consumeOP(s + i, tokenTable);
         else if(strchr(DL_START, s[i]) != NULL) // delimiter
-            tokenLength = consumeDL(s + i, table);
+            tokenLength = consumeDL(s + i, tokenTable);
         else if(s[i] >= '0' && s[i] <= '9') // constant
-            tokenLength = consumeCS(s + i, table);
+            tokenLength = consumeCS(s + i, tokenTable, symbolTable);
         else // error
             return -1;
         if(tokenLength <= 0) return -1;
 #ifdef MATCH_SOURCE
-        table.back().start = i;
-        table.back().end = i + tokenLength;
+        tokenTable.back().start = i;
+        tokenTable.back().end = i + tokenLength;
 #endif
         i += tokenLength;
     }
     return 0;
 }
 
-void clearTable(SymbolTable &table) {
-    for(SymbolTable::iterator it = table.begin(); it != table.end(); it++)
+void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable) {
+    for(TokenTable::iterator it = tokenTable.begin(); it != tokenTable.end(); it++)
         if(it->type == IDENTIFIER || it->type == COMMENT)
-            delete it->attr.stringValue;
-    table.clear();
+            if(symbolTable[it->attr.index].value.stringValue != NULL) {
+                delete symbolTable[it->attr.index].value.stringValue;
+                symbolTable[it->attr.index].value.stringValue = NULL;
+            }
+    tokenTable.clear();
+    symbolTable.clear();
 }
 
-int consumeIDKW(const char *s, SymbolTable &table) {
+int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable symbolTable) {
+    identifierMap.clear();
     int i;
     for(i = 1; s[i]; i++) {
         if(!((s[i] >= '0' && s[i] <= '9')
@@ -93,31 +111,36 @@ int consumeIDKW(const char *s, SymbolTable &table) {
     // judge if it is a non-datatype keyword
     for(int j = 0; j < NON_DATATYPE_KEYWORDS_NUM; j++) {
         if(strncmp(NON_DATATYPE_KEYWORDS[j], s, i) == 0) {
-            table.push_back(templateEntry);
-            table.back().type = NON_DATATYPE_KEYWORD_CODES[j];
+            tokenTable.push_back(templateTokenEntry);
+            tokenTable.back().type = NON_DATATYPE_KEYWORD_CODES[j];
             return i;
         }
     }
     // judge if it is a datatype keyword
     for(int j = 0; j < DATATYPE_KEYWORDS_NUM; j++) {
         if(strncmp(DATATYPE_KEYWORDS[j], s, i) == 0) {
-            table.push_back(templateEntry);
-            table.back().type = DATATYPE;
-            table.back().attr.dataType = DATATYPE_KEYWORD_CODES[j];
+            tokenTable.push_back(templateTokenEntry);
+            tokenTable.back().type = DATATYPE;
+            tokenTable.back().attr.dataType = DATATYPE_KEYWORD_CODES[j];
             return i;
         }
     }
     // now it must be an identifier
-    table.push_back(templateEntry);
-    table.back().type = IDENTIFIER;
+    tokenTable.push_back(templateTokenEntry);
+    tokenTable.back().type = IDENTIFIER;
     char *str = new char[i + 1];
     strncpy(str, s, i);
     str[i] = '\0';
-    table.back().attr.stringValue = str;
+    string tmp = string(str);
+    if(identifierMap[tmp] == 0) {
+        tokenTable.back().attr.index = identifierMap[tmp] = symbolTable.size() + 1;
+        symbolTable.push_back(templateSymbolEntry);
+    }
+    symbolTable[tokenTable.back().attr.index].value.stringValue = str;
     return i;
 }
 
-int consumeOP(const char *s, SymbolTable &table) {
+int consumeOP(const char *s, TokenTable &tokenTable) {
     LexicalType type;
     int l = 1;
     if(s[0] == '+')
@@ -157,12 +180,12 @@ int consumeOP(const char *s, SymbolTable &table) {
         l = 2;
     } else
         return -1;
-    table.push_back(templateEntry);
-    table.back().type = type;
+    tokenTable.push_back(templateTokenEntry);
+    tokenTable.back().type = type;
     return l;
 }
 
-int consumeDL(const char *s, SymbolTable &table) {
+int consumeDL(const char *s, TokenTable &tokenTable) {
     LexicalType type;
     int l = 1;
     if(s[0] == '=')
@@ -179,23 +202,23 @@ int consumeDL(const char *s, SymbolTable &table) {
         type = RIGHTBRACE;
     else
         return -1;
-    table.push_back(templateEntry);
-    table.back().type = type;
+    tokenTable.push_back(templateTokenEntry);
+    tokenTable.back().type = type;
     return l;
 }
 
-int consumeCS(const char *s, SymbolTable &table) {
+int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable) {
     int i;
-    LexicalType type = INT_CONSTANT;
+    bool isFloat = false;
     int intValue = 0;
     double floatValue = 0.0;
     double scale = 1;
     for(i = 1; s[i]; i++) {
         if(s[i] == '.') { // judge if it is a float number
-            type = FLOAT_CONSTANT;
+            isFloat = true;
             floatValue = intValue;
         } else if(s[i] >= '0' && s[i] <= '9') {
-            if(type == INT_CONSTANT) {
+            if(isFloat) {
                 intValue = intValue * 10 + (int)s[i];
             } else {
                 scale *= 0.1;
@@ -205,18 +228,28 @@ int consumeCS(const char *s, SymbolTable &table) {
             break;
         }
     }
-    if(type == FLOAT_CONSTANT && scale == 1) // no numbers after the decimal point
+    if(isFloat && scale == 1) // no numbers after the decimal point
         return -1;
-    table.push_back(templateEntry);
-    table.back().type = type;
-    if(type == INT_CONSTANT)
-        table.back().attr.intValue = intValue;
-    else
-        table.back().attr.floatValue = floatValue;
+    tokenTable.push_back(templateTokenEntry);
+    tokenTable.back().type = CONSTANT;
+    symbolTable[tokenTable.back().attr.index].value.numberValue.isFloat = isFloat;
+    if(isFloat) {
+        if(floatConstantMap[floatValue] == 0) {
+            tokenTable.back().attr.index = floatConstantMap[floatValue] = symbolTable.size() + 1;
+            symbolTable.push_back(templateSymbolEntry);
+        }
+        symbolTable[tokenTable.back().attr.index].value.numberValue.value.floatValue = floatValue;
+    } else {
+        if(intConstantMap[intValue] == 0) {
+            tokenTable.back().attr.index = intConstantMap[intValue] = symbolTable.size() + 1;
+            symbolTable.push_back(templateSymbolEntry);
+        }
+        symbolTable[tokenTable.back().attr.index].value.numberValue.value.intValue = intValue;
+    }
     return i;
 }
 
-int consumeCM(const char *s, SymbolTable &table) {
+int consumeCM(const char *s, TokenTable &tokenTable) {
     int i = 0;
     bool matchedFlag = false;
     for(i = 2; s[i]; i++) {
@@ -228,12 +261,8 @@ int consumeCM(const char *s, SymbolTable &table) {
     }
     if(!matchedFlag)
         return -1;
-    table.push_back(templateEntry);
-    table.back().type = COMMENT;
-    char *str = new char[i + 1];
-    strncpy(str, s, i);
-    str[i] = '\0';
-    table.back().attr.stringValue = str;
+    tokenTable.push_back(templateTokenEntry);
+    tokenTable.back().type = COMMENT;
     return i;
 }
 

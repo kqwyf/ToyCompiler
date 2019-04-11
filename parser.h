@@ -34,8 +34,7 @@ enum LexicalType {
     SEMICOLON,
     LEFTBRACE,
     RIGHTBRACE,
-    INT_CONSTANT,
-    FLOAT_CONSTANT,
+    CONSTANT,
     COMMENT
 };
 
@@ -47,24 +46,38 @@ enum DataType {
     STRUCT
 };
 
-union LexicalAttribute {
+union SymbolValue {
     char *stringValue;
-    DataType dataType;
-    int intValue;
-    double floatValue;
+    struct {
+        bool isFloat;
+        union {
+            int intValue;
+            double floatValue;
+        } value;
+    } numberValue;
 };
 
 struct SymbolTableEntry {
+    SymbolValue value;
+};
+
+union TokenAttribute {
+    int index;
+    DataType dataType;
+};
+
+struct TokenTableEntry {
     LexicalType type;
-    LexicalAttribute attr;
+    TokenAttribute attr;
 #ifdef MATCH_SOURCE
     int start, end;
 #endif
 };
 
+typedef vector<TokenTableEntry> TokenTable;
 typedef vector<SymbolTableEntry> SymbolTable;
 
-int lexicalParse(const char *s, SymbolTable &table);
-void clearTable(SymbolTable &table);
+int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable);
+void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable);
 
 #endif
