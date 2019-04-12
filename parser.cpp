@@ -65,6 +65,7 @@ int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symb
     clearTable(tokenTable, symbolTable);
     symbolTable.push_back(templateSymbolEntry); // index 0 of the symbol table is not used
     row = col = 1;
+    bool errorOccured = false;
     int i = 0;
     while(i < l) {
         // skip blank characters
@@ -79,7 +80,7 @@ int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symb
         if(i == l) break;
         // judge the type of token by its first character
         bool isComment = false;
-        int tokenLength = -1;
+        int tokenLength = 0;
         if((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z') || s[i] == '_') // identifier or keyword
             tokenLength = consumeIDKW(s + i, tokenTable, symbolTable);
         else if(s[i] == '/' && s[i + 1] == '*') { // comment (must prior to operator)
@@ -93,9 +94,10 @@ int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symb
         else if(s[i] >= '0' && s[i] <= '9') // constant
             tokenLength = consumeCS(s + i, tokenTable, symbolTable);
         else { // error
+            err = UNRECOGNIZED_CHARACTER;
             tokenLength = 0;
             skipped = 1; // skip the character
-            printf(LEXICAL_ERROR_MESSAGE[UNRECOGNIZED_CHARACTER], s[i]);
+            printf(LEXICAL_ERROR_MESSAGE[err], row, col, s[i]);
         }
 #ifdef MATCH_SOURCE
         if(tokenLength > 0) { // token consumed successfully
@@ -103,12 +105,13 @@ int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symb
             tokenTable.back().end = i + tokenLength;
         }
 #endif
+        if(err) errorOccured = true;
         int totLen = tokenLength + (skipped > 0 ? skipped : 0);
         i += totLen;
         if(!isComment) col += totLen; // `row` and `col` is managed by the consumer function
                                       // when consuming comments
     }
-    return 0;
+    return errorOccured ? -1 : 0;
 }
 
 void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable) {
@@ -172,51 +175,47 @@ int consumeOP(const char *s, TokenTable &tokenTable) {
     err = LEXICAL_OK;
     skipped = 0;
     LexicalType type;
-    int i, l = 1;
-    for(i = 0; s[i]; i++) {
-        if(s[i] == '+')
-            type = PLUS;
-        else if(s[i] == '-')
-            type = MINUS;
-        else if(s[i] == '*')
-            type = MULTIPLY;
-        else if(s[i] == '/')
-            type = DIVIDE;
-        else if(s[i] == '<') {
-            if(s[i + 1] == '=') {
-                type = LESSEQUAL;
-                l = 2;
-            } else
-                type = LESS;
-        } else if(s[i] == '>') {
-            if(s[i + 1] == '=') {
-                type = GREATEREQUAL;
-                l = 2;
-            } else
-                type = GREATER;
-        } else if(s[i] == '=' && s[i + 1] == '=') {
-            type = EQUAL;
+    int l = 1;
+    if(s[0] == '+')
+        type = PLUS;
+    else if(s[0] == '-')
+        type = MINUS;
+    else if(s[0] == '*')
+        type = MULTIPLY;
+    else if(s[0] == '/')
+        type = DIVIDE;
+    else if(s[0] == '<') {
+        if(s[1] == '=') {
+            type = LESSEQUAL;
             l = 2;
-        } else if(s[i] == '!') {
-            if(s[i + 1] == '=') {
-                type = NOTEQUAL;
-                l = 2;
-            } else
-                type = NOT;
-        } else if(s[i] == '&' && s[i + 1] == '&') {
-            type = AND;
+        } else
+            type = LESS;
+    } else if(s[0] == '>') {
+        if(s[1] == '=') {
+            type = GREATEREQUAL;
             l = 2;
-        } else if(s[i] == '|' && s[i + 1] == '|') {
-            type = OR;
+        } else
+            type = GREATER;
+    } else if(s[0] == '=' && s[1] == '=') {
+        type = EQUAL;
+        l = 2;
+    } else if(s[0] == '!') {
+        if(s[1] == '=') {
+            type = NOTEQUAL;
             l = 2;
-        } else {
-            if(s[i] == '\n') return 0;
-            err = UNRECOGNIZED_OPERATOR;
-            printf(LEXICAL_ERROR_MESSAGE[err], row, col + i, s[i]);
-            skipped++;
-            continue;
-        }
-        break;
+        } else
+            type = NOT;
+    } else if(s[0] == '&' && s[1] == '&') {
+        type = AND;
+        l = 2;
+    } else if(s[0] == '|' && s[1] == '|') {
+        type = OR;
+        l = 2;
+    } else {
+        err = UNRECOGNIZED_OPERATOR;
+        printf(LEXICAL_ERROR_MESSAGE[err], row, col, s[0]);
+        skipped = 1;
+        return 0;
     }
     tokenTable.push_back(templateTokenEntry);
     tokenTable.back().type = type;
@@ -227,27 +226,24 @@ int consumeDL(const char *s, TokenTable &tokenTable) {
     err = LEXICAL_OK;
     skipped = 0;
     LexicalType type;
-    int i, l = 1;
-    for(i = 0; s[i]; i++) {
-        if(s[i] == '=')
-            type = ASSIGN;
-        else if(s[i] == '(')
-            type = LEFTBRACKET;
-        else if(s[i] == ')')
-            type = RIGHTBRACKET;
-        else if(s[i] == ';')
-            type = SEMICOLON;
-        else if(s[i] == '{')
-            type = LEFTBRACE;
-        else if(s[i] == '}')
-            type = RIGHTBRACE;
-        else {
-            err = UNKNOWN_ERROR;
-            printf(LEXICAL_ERROR_MESSAGE[err], row, col + i);
-            skipped++;
-            continue;
-        }
-        break;
+    int l = 1;
+    if(s[0] == '=')
+        type = ASSIGN;
+    else if(s[0] == '(')
+        type = LEFTBRACKET;
+    else if(s[0] == ')')
+        type = RIGHTBRACKET;
+    else if(s[0] == ';')
+        type = SEMICOLON;
+    else if(s[0] == '{')
+        type = LEFTBRACE;
+    else if(s[0] == '}')
+        type = RIGHTBRACE;
+    else {
+        err = UNKNOWN_ERROR;
+        printf(LEXICAL_ERROR_MESSAGE[err], row, col);
+        skipped = 1;
+        return 0;
     }
     tokenTable.push_back(templateTokenEntry);
     tokenTable.back().type = type;
@@ -261,7 +257,7 @@ int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable) {
     bool isFloat = false;
     int intValue = 0;
     double floatValue = 0.0;
-    double scale = 1;
+    double scale = 1.0;
     intValue = s[0] - '0';
     for(i = 1; s[i]; i++) {
         if(s[i] == '.') { // judge if it is a float number
@@ -278,7 +274,8 @@ int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable) {
             break;
         }
     }
-    if(isFloat && scale == 1) { // no numbers after the decimal point
+    if(isFloat && scale == 1.0) { // no numbers after the decimal point
+        i--;
         isFloat = false;
     }
     tokenTable.push_back(templateTokenEntry);

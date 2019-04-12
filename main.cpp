@@ -163,16 +163,18 @@ int main(int argc, char **argv) {
         TokenTable *tokenTable = new TokenTable();
         SymbolTable *symbolTable = new SymbolTable();
         int err = lexicalParse(buffer, length, *tokenTable, *symbolTable);
-        if(err) {
-            printf("Compile error occured.\n");
-        }
+        if(err) putchar('\n');
         printf("Token sequence:\n");
         for(TokenTable::iterator it = tokenTable->begin(); it != tokenTable->end(); it++) {
 #ifdef MATCH_SOURCE
-            for(int i = it->start; i < it->end; i++)
-                putchar(buffer[i]);
-            for(int i = 0; i < 14 - (it->end - it->start); i++)
-                putchar(' ');
+            if(it->type == COMMENT) {
+                printf("/* ... */     ");
+            } else {
+                for(int i = it->start; i < it->end; i++)
+                    putchar(buffer[i]);
+                for(int i = 0; i < 14 - (it->end - it->start); i++)
+                    putchar(' ');
+            }
             printf("  ");
 #endif
             if(it->type == IDENTIFIER || it->type == CONSTANT)
