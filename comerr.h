@@ -10,11 +10,11 @@ enum LexicalError {
 };
 
 const char *(LEXICAL_ERROR_MESSAGE[]) = {
-    "Line %d, Col %d: No error.",
-    "Line %d, Col %d: Unknown error."
-    "Line %d, Col %d: Unrecognized character: %c. Skipped.",
-    "Line %d, Col %d: Unrecognized operator: %c. Skipped.",
-    "Line %d, Col %d: Incomplete comment. Enclosed automatically."
+    "Line %d, Col %d: No error.\n",
+    "Line %d, Col %d: Unknown error.\n",
+    "Line %d, Col %d: Unrecognized character: %c. Skipped.\n",
+    "Line %d, Col %d: Unrecognized operator: %c. Skipped.\n",
+    "Line %d, Col %d: Incomplete comment. Enclosed automatically.\n"
 };
 
 #endif
