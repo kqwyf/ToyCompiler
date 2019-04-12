@@ -210,6 +210,7 @@ int consumeOP(const char *s, TokenTable &tokenTable) {
             type = OR;
             l = 2;
         } else {
+            if(s[i] == '\n') return 0;
             err = UNRECOGNIZED_OPERATOR;
             printf(LEXICAL_ERROR_MESSAGE[err], row, col + i, s[i]);
             skipped++;

@@ -1,0 +1,48 @@
+Token sequence:
+int             < DATATYPE    , INT    >
+input           < IDENTIFIER  , 1      >
+(               < LEFTBRACKET ,        >
+int             < DATATYPE    , INT    >
+a               < IDENTIFIER  , 2      >
+)               < RIGHTBRACKET,        >
+{               < LEFTBRACE   ,        >
+do              < DO          ,        >
+;               < SEMICOLON   ,        >
+/* ... */       < COMMENT     ,        >
+}               < RIGHTBRACE  ,        >
+int             < DATATYPE    , INT    >
+height          < IDENTIFIER  , 3      >
+;               < SEMICOLON   ,        >
+int             < DATATYPE    , INT    >
+width           < IDENTIFIER  , 4      >
+;               < SEMICOLON   ,        >
+input           < IDENTIFIER  , 1      >
+(               < LEFTBRACKET ,        >
+height          < IDENTIFIER  , 3      >
+)               < RIGHTBRACKET,        >
+;               < SEMICOLON   ,        >
+input           < IDENTIFIER  , 1      >
+(               < LEFTBRACKET ,        >
+width           < IDENTIFIER  , 4      >
+)               < RIGHTBRACKET,        >
+;               < SEMICOLON   ,        >
+/* ... */       < COMMENT     ,        >
+result          < IDENTIFIER  , 5      >
+=               < ASSIGN      ,        >
+height          < IDENTIFIER  , 3      >
+*               < MULTIPLY    ,        >
+width           < IDENTIFIER  , 4      >
+;               < SEMICOLON   ,        >
+print           < IDENTIFIER  , 6      >
+(               < LEFTBRACKET ,        >
+result          < IDENTIFIER  , 5      >
+)               < RIGHTBRACKET,        >
+;               < SEMICOLON   ,        >
+
+Symbol table:
+1     input
+2     a
+3     height
+4     width
+5     result
+6     print

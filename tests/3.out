@@ -1,0 +1,41 @@
+Line 2, Col 28: Unrecognized operator: '&'. Skipped.
+Line 2, Col 30: Unrecognized operator: '|'. Skipped.
+Line 2, Col 32: Unrecognized operator: '&'. Skipped.
+Line 2, Col 33: Unrecognized operator: '|'. Skipped.
+Line 2, Col 35: Unrecognized operator: '|'. Skipped.
+Line 2, Col 36: Unrecognized operator: '&'. Skipped.
+
+Token sequence:
++               < PLUS        ,        >
+-               < MINUS       ,        >
+*               < MULTIPLY    ,        >
+/               < DIVIDE      ,        >
+<               < LESS        ,        >
+>               < GREATER     ,        >
+<=              < LESSEQUAL   ,        >
+>=              < GREATEREQUAL,        >
+==              < EQUAL       ,        >
+!=              < NOTEQUAL    ,        >
+&&              < AND         ,        >
+||              < OR          ,        >
+!               < NOT         ,        >
++               < PLUS        ,        >
++               < PLUS        ,        >
+-               < MINUS       ,        >
+-               < MINUS       ,        >
+*               < MULTIPLY    ,        >
+*               < MULTIPLY    ,        >
+/               < DIVIDE      ,        >
+/               < DIVIDE      ,        >
+<               < LESS        ,        >
+<               < LESS        ,        >
+>               < GREATER     ,        >
+>               < GREATER     ,        >
+<               < LESS        ,        >
+>               < GREATER     ,        >
+>               < GREATER     ,        >
+<               < LESS        ,        >
+=               < ASSIGN      ,        >
+!               < NOT         ,        >
+
+Symbol table:

@@ -1,0 +1,59 @@
+Token sequence:
+int             < DATATYPE    , INT    >
+float           < DATATYPE    , FLOAT  >
+bool            < DATATYPE    , BOOL   >
+struct          < DATATYPE    , STRUCT >
+if              < IF          ,        >
+else            < ELSE        ,        >
+do              < DO          ,        >
+while           < WHILE       ,        >
+in              < IDENTIFIER  , 1      >
+floa            < IDENTIFIER  , 2      >
+bo              < IDENTIFIER  , 3      >
+str             < IDENTIFIER  , 4      >
+i               < IDENTIFIER  , 5      >
+el              < IDENTIFIER  , 6      >
+d               < IDENTIFIER  , 7      >
+wh              < IDENTIFIER  , 8      >
+inta            < IDENTIFIER  , 9      >
+floatbb         < IDENTIFIER  , 10     >
+boolcd          < IDENTIFIER  , 11     >
+structdef       < IDENTIFIER  , 12     >
+ifefg           < IDENTIFIER  , 13     >
+elsefa          < IDENTIFIER  , 14     >
+dogd            < IDENTIFIER  , 15     >
+whilehb         < IDENTIFIER  , 16     >
+int_            < IDENTIFIER  , 17     >
+float12         < IDENTIFIER  , 18     >
+bool0a          < IDENTIFIER  , 19     >
+structint       < IDENTIFIER  , 20     >
+if_0            < IDENTIFIER  , 21     >
+else_d          < IDENTIFIER  , 22     >
+doA             < IDENTIFIER  , 23     >
+whileZ_         < IDENTIFIER  , 24     >
+
+Symbol table:
+1     in
+2     floa
+3     bo
+4     str
+5     i
+6     el
+7     d
+8     wh
+9     inta
+10    floatbb
+11    boolcd
+12    structdef
+13    ifefg
+14    elsefa
+15    dogd
+16    whilehb
+17    int_
+18    float12
+19    bool0a
+20    structint
+21    if_0
+22    else_d
+23    doA
+24    whileZ_

@@ -1,0 +1,12 @@
+Line 14, Col 1: Incomplete comment. Enclosed automatically.
+
+Token sequence:
+/* ... */       < COMMENT     ,        >
+/* ... */       < COMMENT     ,        >
+/* ... */       < COMMENT     ,        >
+/* ... */       < COMMENT     ,        >
+/* ... */       < COMMENT     ,        >
+/* ... */       < COMMENT     ,        >
+/* ... */       < COMMENT     ,        >
+
+Symbol table:

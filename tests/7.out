@@ -1,0 +1,40 @@
+Line 1, Col 8: Unrecognized character: ','. Skipped.
+Line 4, Col 7: Unrecognized character: '.'. Skipped.
+Line 5, Col 8: Unrecognized operator: '&'. Skipped.
+Line 8, Col 1: Incomplete comment. Enclosed automatically.
+
+Token sequence:
+int             < DATATYPE    , INT    >
+abc             < IDENTIFIER  , 1      >
+e               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+float           < DATATYPE    , FLOAT  >
+d               < IDENTIFIER  , 3      >
+;               < SEMICOLON   ,        >
+abc             < IDENTIFIER  , 1      >
+=               < ASSIGN      ,        >
+1               < CONSTANT    , 4      >
+;               < SEMICOLON   ,        >
+d               < IDENTIFIER  , 3      >
+=               < ASSIGN      ,        >
+3               < CONSTANT    , 5      >
+abc             < IDENTIFIER  , 1      >
+=               < ASSIGN      ,        >
+d               < IDENTIFIER  , 3      >
+abc             < IDENTIFIER  , 1      >
+;               < SEMICOLON   ,        >
+;               < SEMICOLON   ,        >
+;               < SEMICOLON   ,        >
+d               < IDENTIFIER  , 3      >
+=               < ASSIGN      ,        >
+abc             < IDENTIFIER  , 1      >
++               < PLUS        ,        >
+d               < IDENTIFIER  , 3      >
+/* ... */       < COMMENT     ,        >
+
+Symbol table:
+1     abc
+2     e
+3     d
+4     1
+5     3

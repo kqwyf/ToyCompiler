@@ -1,0 +1,32 @@
+Token sequence:
+_               < IDENTIFIER  , 1      >
+_123            < IDENTIFIER  , 2      >
+_abc            < IDENTIFIER  , 3      >
+_1aZ            < IDENTIFIER  , 4      >
+__aa_1_223      < IDENTIFIER  , 5      >
+a123            < IDENTIFIER  , 6      >
+A321            < IDENTIFIER  , 7      >
+Aa90            < IDENTIFIER  , 8      >
+zZ55            < IDENTIFIER  , 9      >
+a_A             < IDENTIFIER  , 10     >
+ab__            < IDENTIFIER  , 11     >
+d1_2            < IDENTIFIER  , 12     >
+_123            < IDENTIFIER  , 2      >
+_1aZ            < IDENTIFIER  , 4      >
+zZ55            < IDENTIFIER  , 9      >
+ab__            < IDENTIFIER  , 11     >
+d1_2            < IDENTIFIER  , 12     >
+
+Symbol table:
+1     _
+2     _123
+3     _abc
+4     _1aZ
+5     __aa_1_223
+6     a123
+7     A321
+8     Aa90
+9     zZ55
+10    a_A
+11    ab__
+12    d1_2

@@ -1,0 +1,21 @@
+Token sequence:
+=               < ASSIGN      ,        >
+(               < LEFTBRACKET ,        >
+)               < RIGHTBRACKET,        >
+;               < SEMICOLON   ,        >
+{               < LEFTBRACE   ,        >
+}               < RIGHTBRACE  ,        >
+=               < ASSIGN      ,        >
+(               < LEFTBRACKET ,        >
+)               < RIGHTBRACKET,        >
+;               < SEMICOLON   ,        >
+{               < LEFTBRACE   ,        >
+}               < RIGHTBRACE  ,        >
+}               < RIGHTBRACE  ,        >
+{               < LEFTBRACE   ,        >
+;               < SEMICOLON   ,        >
+)               < RIGHTBRACKET,        >
+(               < LEFTBRACKET ,        >
+=               < ASSIGN      ,        >
+
+Symbol table:

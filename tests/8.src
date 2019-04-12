@@ -1,0 +1,12 @@
+int input(int a) {
+    do; /* Do something */
+}
+int height;
+int width;
+input(height);
+input(width);
+/* Here we multiply the height and width
+ * so that we get the area of the rectangle.
+ */
+result = height * width;
+print(result);
