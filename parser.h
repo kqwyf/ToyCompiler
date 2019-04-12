@@ -58,6 +58,7 @@ union SymbolValue {
 };
 
 struct SymbolTableEntry {
+    bool isString;
     SymbolValue value;
 };
 
