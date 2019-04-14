@@ -145,6 +145,7 @@ int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable)
         if(strcmp(NON_DATATYPE_KEYWORDS[j], str) == 0) {
             tokenTable.push_back(templateTokenEntry);
             tokenTable.back().type = NON_DATATYPE_KEYWORD_CODES[j];
+            delete[] str;
             return i;
         }
     }
@@ -154,6 +155,7 @@ int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable)
             tokenTable.push_back(templateTokenEntry);
             tokenTable.back().type = DATATYPE;
             tokenTable.back().attr.dataType = DATATYPE_KEYWORD_CODES[j];
+            delete[] str;
             return i;
         }
     }
