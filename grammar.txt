@@ -1,0 +1,60 @@
+// 以下全大写单词为非终结符，全小写单词及除'|'外的符号均为终结符，单个'|'用于分隔多个推导式，#为终止符
+
+程序：
+S -> STATEMENT_S # | #
+
+语句：
+STATEMENT_S -> STATEMENT_S STATEMENT | STATEMENT
+STATEMENT -> DECLARE | SELECT | LOOP | EXPRESSION ; | { STATEMENT_S }
+
+声明语句：
+DECLARE_S -> DECLARE_S DECLARE | DECLARE
+DECLARE -> DECLARE_VAR | DECLARE_STRUCT | DECLARE_FUN
+    声明变量：
+    DECLARE_VAR_S -> DECLARE_VAR_S | DECLARE_VAR
+    DECLARE_VAR -> TYPE IDENTIFIER_S ;
+    声明结构：
+    DECLARE_STRUCT -> TYPE_STRUCT { DECLARE_S } ;
+    声明函数：
+    DECLARE_FUN -> TYPE identifier ( PARAMETERS ) { STATEMENT_S }
+
+数据类型：
+TYPE -> TYPE_BASIC | TYPE_ARRAY | TYPE_STRUCT
+    基本类型：
+    TYPE_BASIC -> int | float | bool
+    数组类型：
+    TYPE_ARRAY -> TYPE [ constant ]
+    结构类型：
+    TYPE_STRUCT -> struct identifier
+
+选择语句：
+SELECT -> if ( EXPRESSION ) STATEMENT | if ( EXPRESSION ) STATEMENT else STATEMENT
+
+循环语句：
+LOOP -> while ( EXPRESSION ) STATEMENT
+
+表达式：
+EXPRESSION -> identifier
+            | constant
+            | ( EXPRESSION )
+            | EXPRESSION [ EXPRESSION ]
+            | EXPRESSION . identifier
+            | EXPRESSION && EXPRESSION
+            | EXPRESSION || EXPRESSION
+            | ! EXPRESSION
+            | EXPRESSION OPERATOR_REL EXPRESSION
+            | EXPRESSION OPERATOR_ARITH EXPRESSION
+            | - EXPRESSION
+            | EXPRESSION = EXPRESSION
+            | identifier ( EXPRESSION_S )
+EXPRESSION_S -> EXPRESSION_S , EXPRESSION | EXPRESSION
+
+标识符序列：
+IDENTIFIER_S -> IDENTIFIER_S , identifier | identifier
+
+算术运算符：
+OPERATOR_ARITH -> + | - | * | /
+
+关系运算符：
+OPERATOR_REL -> == | != | > | >= | < | <=
+
