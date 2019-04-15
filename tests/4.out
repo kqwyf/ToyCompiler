@@ -1,21 +1,30 @@
 Token sequence:
 =               < ASSIGN      ,        >
-(               < LEFTBRACKET ,        >
-)               < RIGHTBRACKET,        >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+[               < LEFTBRACKET ,        >
+]               < RIGHTBRACKET,        >
 ;               < SEMICOLON   ,        >
+,               < COMMA       ,        >
 {               < LEFTBRACE   ,        >
 }               < RIGHTBRACE  ,        >
 =               < ASSIGN      ,        >
-(               < LEFTBRACKET ,        >
-)               < RIGHTBRACKET,        >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+[               < LEFTBRACKET ,        >
+]               < RIGHTBRACKET,        >
 ;               < SEMICOLON   ,        >
+,               < COMMA       ,        >
 {               < LEFTBRACE   ,        >
 }               < RIGHTBRACE  ,        >
 }               < RIGHTBRACE  ,        >
 {               < LEFTBRACE   ,        >
+,               < COMMA       ,        >
 ;               < SEMICOLON   ,        >
-)               < RIGHTBRACKET,        >
-(               < LEFTBRACKET ,        >
+]               < RIGHTBRACKET,        >
+[               < LEFTBRACKET ,        >
+)               < RIGHTPAREN  ,        >
+(               < LEFTPAREN   ,        >
 =               < ASSIGN      ,        >
 
 Symbol table:

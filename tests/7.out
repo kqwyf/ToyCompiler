@@ -1,4 +1,3 @@
-Line 4, Col 7: Unrecognized character: '.'. Skipped.
 Line 5, Col 8: Unrecognized operator: '&'. Skipped.
 Line 8, Col 1: Incomplete comment. Enclosed automatically.
 
@@ -10,6 +9,8 @@ e               < IDENTIFIER  , 2      >
 ;               < SEMICOLON   ,        >
 float           < FLOAT       ,        >
 d               < IDENTIFIER  , 3      >
+[               < LEFTBRACKET ,        >
+]               < RIGHTBRACKET,        >
 ;               < SEMICOLON   ,        >
 abc             < IDENTIFIER  , 1      >
 =               < ASSIGN      ,        >
@@ -18,6 +19,7 @@ abc             < IDENTIFIER  , 1      >
 d               < IDENTIFIER  , 3      >
 =               < ASSIGN      ,        >
 3               < CONSTANT    , 5      >
+.               < DOT         ,        >
 abc             < IDENTIFIER  , 1      >
 =               < ASSIGN      ,        >
 d               < IDENTIFIER  , 3      >

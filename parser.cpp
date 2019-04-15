@@ -18,9 +18,9 @@ using namespace std;
  * CM: comment
  */
 
-const char *OP_START = "+-*/<>!&|"; // IMPORTANT: "==" should be judged independently,
+const char *OP_START = "+-*/<>!&|."; // IMPORTANT: "==" should be judged independently,
                                     // in order not to be confused with delimiter "="
-const char *DL_START = "=(),;{}";
+const char *DL_START = "=()[],;{}";
 const char BLANK_CHAR[] = " \n\t";
 
 // one-to-one correspondent non-datatype keywords and their codes
@@ -212,7 +212,9 @@ int consumeOP(const char *s, TokenTable &tokenTable) {
     } else if(s[0] == '|' && s[1] == '|') {
         type = OR;
         l = 2;
-    } else {
+    } else if(s[0] == '.')
+        type = DOT;
+    else {
         err = UNRECOGNIZED_OPERATOR;
         printf(LEXICAL_ERROR_MESSAGE[err], row, col, s[0]);
         skipped = 1;
@@ -231,8 +233,12 @@ int consumeDL(const char *s, TokenTable &tokenTable) {
     if(s[0] == '=')
         type = ASSIGN;
     else if(s[0] == '(')
-        type = LEFTBRACKET;
+        type = LEFTPAREN;
     else if(s[0] == ')')
+        type = RIGHTPAREN;
+    else if(s[0] == '[')
+        type = LEFTBRACKET;
+    else if(s[0] == ']')
         type = RIGHTBRACKET;
     else if(s[0] == ',')
         type = COMMA;

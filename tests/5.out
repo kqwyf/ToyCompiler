@@ -1,9 +1,3 @@
-Line 3, Col 2: Unrecognized character: '.'. Skipped.
-Line 3, Col 5: Unrecognized character: '.'. Skipped.
-Line 3, Col 7: Unrecognized character: '.'. Skipped.
-Line 3, Col 10: Unrecognized character: '.'. Skipped.
-Line 3, Col 15: Unrecognized character: '.'. Skipped.
-
 Token sequence:
 0123            < CONSTANT    , 1      >
 321             < CONSTANT    , 2      >
@@ -20,9 +14,14 @@ Token sequence:
 321.12300       < CONSTANT    , 12     >
 00321.12300     < CONSTANT    , 12     >
 0               < CONSTANT    , 4      >
+.               < DOT         ,        >
 3               < CONSTANT    , 13     >
+.               < DOT         ,        >
+.               < DOT         ,        >
 2               < CONSTANT    , 14     >
+.               < DOT         ,        >
 810             < CONSTANT    , 15     >
+.               < DOT         ,        >
 0               < CONSTANT    , 4      >
 
 Symbol table:

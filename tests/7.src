@@ -1,5 +1,5 @@
 int abc, e;
-float d;
+float d[];
 abc = 1;
 d=   3.
 abc = d&abc;;;
