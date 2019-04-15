@@ -1,8 +1,8 @@
 Token sequence:
-int             < DATATYPE    , INT    >
-float           < DATATYPE    , FLOAT  >
-bool            < DATATYPE    , BOOL   >
-struct          < DATATYPE    , STRUCT >
+int             < INT         ,        >
+float           < FLOAT       ,        >
+bool            < BOOL        ,        >
+struct          < STRUCT      ,        >
 if              < IF          ,        >
 else            < ELSE        ,        >
 do              < DO          ,        >

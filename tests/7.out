@@ -1,14 +1,14 @@
-Line 1, Col 8: Unrecognized character: ','. Skipped.
 Line 4, Col 7: Unrecognized character: '.'. Skipped.
 Line 5, Col 8: Unrecognized operator: '&'. Skipped.
 Line 8, Col 1: Incomplete comment. Enclosed automatically.
 
 Token sequence:
-int             < DATATYPE    , INT    >
+int             < INT         ,        >
 abc             < IDENTIFIER  , 1      >
+,               < COMMA       ,        >
 e               < IDENTIFIER  , 2      >
 ;               < SEMICOLON   ,        >
-float           < DATATYPE    , FLOAT  >
+float           < FLOAT       ,        >
 d               < IDENTIFIER  , 3      >
 ;               < SEMICOLON   ,        >
 abc             < IDENTIFIER  , 1      >

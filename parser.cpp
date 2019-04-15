@@ -20,7 +20,7 @@ using namespace std;
 
 const char *OP_START = "+-*/<>!&|"; // IMPORTANT: "==" should be judged independently,
                                     // in order not to be confused with delimiter "="
-const char *DL_START = "=();{}";
+const char *DL_START = "=(),;{}";
 const char BLANK_CHAR[] = " \n\t";
 
 // one-to-one correspondent non-datatype keywords and their codes
@@ -31,11 +31,11 @@ const LexicalType NON_DATATYPE_KEYWORD_CODES[NON_DATATYPE_KEYWORDS_NUM] = {IF, E
 // one-to-one correspondent datatype keywords and their codes
 const int DATATYPE_KEYWORDS_NUM = 4;
 const char *(DATATYPE_KEYWORDS[DATATYPE_KEYWORDS_NUM]) = {"int", "float", "bool", "struct"};
-const DataType DATATYPE_KEYWORD_CODES[DATATYPE_KEYWORDS_NUM] = {INT, FLOAT, BOOL, STRUCT};
+const LexicalType DATATYPE_KEYWORD_CODES[DATATYPE_KEYWORDS_NUM] = {INT, FLOAT, BOOL, STRUCT};
 
 const TokenTableEntry templateTokenEntry = {
     NONE, // type
-    {0} // attr
+    0 // index
 #ifdef MATCH_SOURCE
     ,0, // start
     0 // end
@@ -117,9 +117,9 @@ int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symb
 void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable) {
     for(TokenTable::iterator it = tokenTable.begin(); it != tokenTable.end(); it++)
         if(it->type == IDENTIFIER || it->type == COMMENT)
-            if(symbolTable[it->attr.index].value.stringValue != NULL) {
-                delete symbolTable[it->attr.index].value.stringValue;
-                symbolTable[it->attr.index].value.stringValue = NULL;
+            if(symbolTable[it->index].value.stringValue != NULL) {
+                delete symbolTable[it->index].value.stringValue;
+                symbolTable[it->index].value.stringValue = NULL;
             }
     tokenTable.clear();
     symbolTable.clear();
@@ -153,8 +153,7 @@ int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable)
     for(int j = 0; j < DATATYPE_KEYWORDS_NUM; j++) {
         if(strcmp(DATATYPE_KEYWORDS[j], str) == 0) {
             tokenTable.push_back(templateTokenEntry);
-            tokenTable.back().type = DATATYPE;
-            tokenTable.back().attr.dataType = DATATYPE_KEYWORD_CODES[j];
+            tokenTable.back().type = DATATYPE_KEYWORD_CODES[j];
             delete[] str;
             return i;
         }
@@ -167,9 +166,9 @@ int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable)
         identifierMap[tmp] = symbolTable.size();
         symbolTable.push_back(templateSymbolEntry);
     }
-    tokenTable.back().attr.index = identifierMap[tmp];
-    symbolTable[tokenTable.back().attr.index].isString = true;
-    symbolTable[tokenTable.back().attr.index].value.stringValue = str;
+    tokenTable.back().index = identifierMap[tmp];
+    symbolTable[tokenTable.back().index].isString = true;
+    symbolTable[tokenTable.back().index].value.stringValue = str;
     return i;
 }
 
@@ -235,6 +234,8 @@ int consumeDL(const char *s, TokenTable &tokenTable) {
         type = LEFTBRACKET;
     else if(s[0] == ')')
         type = RIGHTBRACKET;
+    else if(s[0] == ',')
+        type = COMMA;
     else if(s[0] == ';')
         type = SEMICOLON;
     else if(s[0] == '{')
@@ -287,18 +288,18 @@ int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable) {
             floatConstantMap[floatValue] = symbolTable.size();
             symbolTable.push_back(templateSymbolEntry);
         }
-        tokenTable.back().attr.index = floatConstantMap[floatValue];
-        symbolTable[tokenTable.back().attr.index].value.numberValue.value.floatValue = floatValue;
+        tokenTable.back().index = floatConstantMap[floatValue];
+        symbolTable[tokenTable.back().index].value.numberValue.value.floatValue = floatValue;
     } else {
         if(intConstantMap[intValue] == 0) {
             intConstantMap[intValue] = symbolTable.size();
             symbolTable.push_back(templateSymbolEntry);
         }
-        tokenTable.back().attr.index = intConstantMap[intValue];
-        symbolTable[tokenTable.back().attr.index].value.numberValue.value.intValue = intValue;
+        tokenTable.back().index = intConstantMap[intValue];
+        symbolTable[tokenTable.back().index].value.numberValue.value.intValue = intValue;
     }
-    symbolTable[tokenTable.back().attr.index].isString = false;
-    symbolTable[tokenTable.back().attr.index].value.numberValue.isFloat = isFloat;
+    symbolTable[tokenTable.back().index].isString = false;
+    symbolTable[tokenTable.back().index].value.numberValue.isFloat = isFloat;
     return i;
 }
 

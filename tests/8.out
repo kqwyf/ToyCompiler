@@ -1,8 +1,8 @@
 Token sequence:
-int             < DATATYPE    , INT    >
+int             < INT         ,        >
 input           < IDENTIFIER  , 1      >
 (               < LEFTBRACKET ,        >
-int             < DATATYPE    , INT    >
+int             < INT         ,        >
 a               < IDENTIFIER  , 2      >
 )               < RIGHTBRACKET,        >
 {               < LEFTBRACE   ,        >
@@ -10,10 +10,10 @@ do              < DO          ,        >
 ;               < SEMICOLON   ,        >
 /* ... */       < COMMENT     ,        >
 }               < RIGHTBRACE  ,        >
-int             < DATATYPE    , INT    >
+int             < INT         ,        >
 height          < IDENTIFIER  , 3      >
 ;               < SEMICOLON   ,        >
-int             < DATATYPE    , INT    >
+int             < INT         ,        >
 width           < IDENTIFIER  , 4      >
 ;               < SEMICOLON   ,        >
 input           < IDENTIFIER  , 1      >

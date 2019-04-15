@@ -10,7 +10,10 @@ using namespace std;
 enum LexicalType {
     NONE = 0,
     IDENTIFIER,
-    DATATYPE,
+    INT,
+    FLOAT,
+    BOOL,
+    STRUCT,
     IF,
     ELSE,
     DO,
@@ -31,19 +34,12 @@ enum LexicalType {
     ASSIGN,
     LEFTBRACKET,
     RIGHTBRACKET,
+    COMMA,
     SEMICOLON,
     LEFTBRACE,
     RIGHTBRACE,
     CONSTANT,
     COMMENT
-};
-
-enum DataType {
-    NONETYPE = 0,
-    INT,
-    FLOAT,
-    BOOL,
-    STRUCT
 };
 
 union SymbolValue {
@@ -62,14 +58,9 @@ struct SymbolTableEntry {
     SymbolValue value;
 };
 
-union TokenAttribute {
-    int index;
-    DataType dataType;
-};
-
 struct TokenTableEntry {
     LexicalType type;
-    TokenAttribute attr;
+    int index;
 #ifdef MATCH_SOURCE
     int start, end;
 #endif

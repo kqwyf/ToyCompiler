@@ -28,7 +28,10 @@ const char *(modeString[]) = {"none", "lexical", "gramma", "semantic"};
 const char *(lexicalTypeString[]) = {
     "NONE",
     "IDENTIFIER",
-    "DATATYPE",
+    "INT",
+    "FLOAT",
+    "BOOL",
+    "STRUCT",
     "IF",
     "ELSE",
     "DO",
@@ -49,19 +52,12 @@ const char *(lexicalTypeString[]) = {
     "ASSIGN",
     "LEFTBRACKET",
     "RIGHTBRACKET",
+    "COMMA",
     "SEMICOLON",
     "LEFTBRACE",
     "RIGHTBRACE",
     "CONSTANT",
     "COMMENT"
-};
-
-const char *(dataTypeString[]) = {
-    "NONE",
-    "INT",
-    "FLOAT",
-    "BOOL",
-    "STRUCT"
 };
 
 int main(int argc, char **argv) {
@@ -178,9 +174,7 @@ int main(int argc, char **argv) {
             printf("  ");
 #endif
             if(it->type == IDENTIFIER || it->type == CONSTANT)
-                printf("< %-12s, %-6d >\n", lexicalTypeString[it->type], it->attr.index);
-            else if(it->type == DATATYPE)
-                printf("< %-12s, %-6s >\n", lexicalTypeString[it->type], dataTypeString[it->attr.dataType]);
+                printf("< %-12s, %-6d >\n", lexicalTypeString[it->type], it->index);
             else
                 printf("< %-12s,        >\n", lexicalTypeString[it->type]);
         }
