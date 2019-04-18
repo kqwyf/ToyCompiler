@@ -1,0 +1,95 @@
+// 以下全大写单词为非终结符（非终结符末尾的标号仅为语义定义作区分用），全小写单词及除'|'外的符号均为终结符，单个'|'用于分隔多个推导式，#为终止符
+
+程序：
+S -> DECLARE_S #
+   | #
+
+语句：
+STATEMENT_S -> STATEMENT_S1 STATEMENT
+             | STATEMENT
+STATEMENT -> DECLARE
+           | SELECT
+           | LOOP
+           | EXPRESSION ;
+           | STATEMENTS_BEGIN STATEMENT_S }
+STATEMENTS_BEGIN -> {
+
+声明语句：
+DECLARE_S -> DECLARE_S1 DECLARE
+           | DECLARE
+DECLARE -> DECLARE_VAR
+         | DECLARE_STRUCT
+         | DECLARE_FUNC
+    声明变量：
+    DECLARE_VAR_S -> DECLARE_VAR_S1
+                   | DECLARE_VAR
+    DECLARE_VAR -> TYPE IDENTIFIER_S ;
+    声明结构：
+    DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_S } ;
+    DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
+    声明函数：
+    DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+    DECLARE_FUNC_BEGIN -> TYPE identifier (
+    DECLARE_FUNC_MID -> PARAMETERS ) {
+        PARAMETERS -> PARAMETERS , TYPE identifier
+                    | TYPE identifier
+
+数据类型：
+TYPE -> TYPE_BASIC
+      | TYPE_ARRAY
+      | TYPE_STRUCT
+    基本类型：
+    TYPE_BASIC -> int
+                | float
+                | bool
+    数组类型：
+    TYPE_ARRAY -> TYPE_ARRAY [ constant ]
+                | TYPE_BASIC [ constant ]
+    结构类型：
+    TYPE_STRUCT -> struct identifier
+
+选择语句：
+SELECT -> SELECT_BEGIN STATEMENT
+        | SELECT_BEGIN STATEMENT1 SELECT_MID STATEMENT2
+SELECT_BEGIN -> if ( EXPRESSION )
+SELECT_MID -> else
+
+循环语句：
+LOOP -> LOOP_BEGIN STATEMENT
+LOOP_BEGIN -> while ( EXPRESSION )
+
+表达式（以下排序同时表示优先级，优先级向下递减）：
+EXPRESSION -> identifier ( EXPRESSION_S )
+            | identifier
+            | constant
+            | ( EXPRESSION1 )
+            | ! EXPRESSION
+            | - EXPRESSION
+            | EXPRESSION . identifier
+            | EXPRESSION1 [ EXPRESSION2 ]
+            | EXPRESSION1 OPERATOR_ARITH EXPRESSION2
+            | EXPRESSION1 OPERATOR_REL EXPRESSION2
+            | EXPRESSION1 && EXPRESSION2
+            | EXPRESSION1 || EXPRESSION2
+            | EXPRESSION1 = EXPRESSION2
+EXPRESSION_S -> EXPRESSION_S1 , EXPRESSION
+              | EXPRESSION
+
+标识符序列：
+IDENTIFIER_S -> IDENTIFIER_S1 , identifier
+              | identifier
+
+算术运算符：
+OPERATOR_ARITH -> +
+                | -
+                | *
+                | /
+
+关系运算符：
+OPERATOR_REL -> ==
+              | !=
+              | >
+              | >=
+              | <
+              | <=
+
