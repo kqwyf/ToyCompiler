@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "parser.h"
+#include "lex.h"
 
 const char *usage = 
 "Usage:\n\
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
     if(mode == LEXICAL) {
         TokenTable *tokenTable = new TokenTable();
         SymbolTable *symbolTable = new SymbolTable();
-        int err = lexicalParse(buffer, length, *tokenTable, *symbolTable);
+        int err = lexicalAnalyse(buffer, length, *tokenTable, *symbolTable);
         if(err) putchar('\n');
         printf("Token sequence:\n");
         for(TokenTable::iterator it = tokenTable->begin(); it != tokenTable->end(); it++) {

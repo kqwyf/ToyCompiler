@@ -1,5 +1,5 @@
 all:
-	g++ -O2 main.cpp parser.cpp -o build/main
+	g++ -O2 main.cpp lex.cpp -o build/main
 
 test: testl
 

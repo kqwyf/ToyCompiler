@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#include "parser.h"
+#include "lex.h"
 #include "comerr.h"
 
 /* Abbreviations:
@@ -58,7 +58,7 @@ int consumeDL(const char *s, TokenTable &tokenTable);
 int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable);
 int consumeCM(const char *s, TokenTable &tokenTable);
 
-int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable) {
+int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable) {
     identifierMap.clear();
     intConstantMap.clear();
     floatConstantMap.clear();

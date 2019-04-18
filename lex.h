@@ -1,5 +1,5 @@
-#ifndef __PARSER_H__
-#define __PARSER_H__
+#ifndef __LEX_H__
+#define __LEX_H__
 
 #define MATCH_SOURCE
 
@@ -72,7 +72,7 @@ struct TokenTableEntry {
 typedef vector<TokenTableEntry> TokenTable;
 typedef vector<SymbolTableEntry> SymbolTable;
 
-int lexicalParse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable);
+int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable);
 void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable);
 
 #endif
