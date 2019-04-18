@@ -17,6 +17,7 @@ testl:
 	./build/main -l ./tests/6.src | diff - ./tests/6.out
 	./build/main -l ./tests/7.src | diff - ./tests/7.out
 	./build/main -l ./tests/8.src | diff - ./tests/8.out
+	./build/main -g ./tests/9.src | diff - ./tests/9.out
 	python3 ./LR1.py ./tests/g1.grm -h | diff - ./tests/g1.out
 	python3 ./LR1.py ./tests/g2.grm -h | diff - ./tests/g2.out
 	python3 ./LR1.py ./tests/g3.grm -h -i | diff - ./tests/g3.out

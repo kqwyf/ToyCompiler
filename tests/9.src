@@ -1,0 +1,8 @@
+int parse(int a, int b) {
+    print(a);
+    print(b);
+}
+
+int main(int argc) {
+    parse(argc, argc);
+}
