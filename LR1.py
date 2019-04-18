@@ -1,46 +1,97 @@
 import sys
 import numpy as np
 
-# gen structure: (left, (right1, right2, ...))
-# item structure: (gen#, dot_location, succeeding_symbol_set)
+# production structure: (left, (right1, right2, ...))
+# item structure: (pro#, dot_location, succeeding_symbol_set)
 
 START_SYMBOL = 'S'
 END_SYMBOL = '#'
 
 syms = []
-gens = []
-stats = [] # list((gen#, dot_location) -> set(symbol#))
+pros = []
+stats = [] # list((pro#, dot_location) -> set(symbol#))
 empty = set() # set(symbol#)
-group = dict() # stat# -> (symbol#(-1 for reduction) -> set((gen#, dot_location))
+group = dict() # stat# -> (symbol#(-1 for reduction) -> set((pro#, dot_location))
 shift = dict() # (stat#, symbol#) -> stat#
-reduc = dict() # (stat#, symbol#) -> set(gen#)
+reduc = dict() # (stat#, symbol#) -> set(pro#)
 FIRST = dict() # symbol# -> set(symbol#)
 FOLLOW = dict() # symbol# -> set(symbol#)
 smap = dict() # symbol -> symbol#
-gmap = dict() # symbol# -> list(gen#)
-imap = dict() # sorted_tuple((gen#, dot_location, sorted_succeeding_symbol_tuple)) -> stat#
+gmap = dict() # symbol# -> list(pro#)
+imap = dict() # sorted_tuple((pro#, dot_location, sorted_succeeding_symbol_tuple)) -> stat#
+
+code = """/*
+ * This file is generated automatically by the LR(1) grammar analyser.
+ * You should solve the conflicts manually by compiling this file and check the compile errors.
+ */
+#ifndef __GRAMMAR_H__
+#define __GRAMMAR_H__
+
+#include <set>
+
+using namespace std;
+
+static const int STATE_N = %d;
+static const int SYMBOL_N = %d;
+static const int PRO_N = %d;
+static const int TERMINAL_N = %d;
+
+const int INIT_STATE = %d;
+const int END_SYMBOL = %d;
+
+const int GOTO[STATE_N][SYMBOL_N] = {
+    {%s}
+};
+const char ACTION[STATE_N][TERMINAL_N] = {
+    {%s}
+};
+const int PRO_LEFT[PRO_N] = {%s};
+const int PRO_LENGTH[PRO_N] = {%s}; // length of right of the pro
+
+const set<int> RECOVER_SYMBOL[STATE_N] = { // an arbitrary non-terminal symbol which is related to this state in GOTO, -1 if not exists
+    set<int> {%s}
+};
+
+const set<int> FOLLOW[SYMBOL_N] = {
+    set<int> {%s}
+};
+
+const char *(PRO[PRO_N]) = {
+    %s
+};
+
+inline bool isTerminal(int label) {
+    return label < TERMINAL_N;
+}
+
+const char *(GRAMMA_ERROR_MESSAGE[]) = {
+    %s
+};
+
+#endif
+"""
 
 def element(s): # get an arbitrary element from s
     for i in s:
         return i
 
-def g2s(g):
-    return syms[gens[g][0]] + " -> " + " ".join([syms[s] for s in gens[g][1]])
+def p2s(p):
+    return syms[pros[p][0]] + " -> " + " ".join([syms[s] for s in pros[p][1]])
 
 def i2s(i, suc):
-    right = [syms[s] for s in gens[i[0]][1]]
+    right = [syms[s] for s in pros[i[0]][1]]
     right = right[:i[1]] + ["@"] + right[i[1]:]
-    return syms[gens[i[0]][0]] + " -> " + " ".join(right) + "; " + "/".join([syms[s] for s in suc])
+    return syms[pros[i[0]][0]] + " -> " + " ".join(right) + "; " + "/".join([syms[s] for s in suc])
 
 def addId(line):
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
     ids = line.split()
     for i in range(len(ids)):
         smap[ids[i]] = i
         syms += [ids[i]]
 
 def read(f):
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
     if START_SYMBOL not in smap:
         smap[START_SYMBOL] = len(syms)
         syms += [START_SYMBOL]
@@ -62,10 +113,10 @@ def read(f):
         fs = smap[first]
         if isFirst:
             isFirst = False
-            gmap[smap[START_SYMBOL]] = [len(gens)]
-            startGen = len(gens)
-            gens += [(smap[START_SYMBOL], tuple([fs]))]
-        if len(l) <= start: # empty-able gen
+            gmap[smap[START_SYMBOL]] = [len(pros)]
+            startGen = len(pros)
+            pros += [(smap[START_SYMBOL], tuple([fs]))]
+        if len(l) <= start: # empty-able production
             empty.add(fs)
             continue
         right = []
@@ -74,11 +125,11 @@ def read(f):
                 smap[w] = len(syms)
                 syms += [w]
             right += [smap[w]]
-        gmap[fs] += [len(gens)]
-        gens += [tuple([fs, tuple(right)])]
+        gmap[fs] += [len(pros)]
+        pros += [tuple([fs, tuple(right)])]
 
 def solveFIRST(sym, visited):
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
     if sym in visited:
         return set()
     if sym in FIRST:
@@ -88,8 +139,8 @@ def solveFIRST(sym, visited):
         return FIRST[sym]
     visited.add(sym)
     result = set()
-    for g in gmap[sym]:
-        for s in gens[g][1]:
+    for p in gmap[sym]:
+        for s in pros[p][1]:
             result |= solveFIRST(s, visited)
             if s not in empty:
                 break
@@ -104,13 +155,13 @@ def solveFOLLOW():
     FOLLOW[smap[START_SYMBOL]].add(smap[END_SYMBOL])
     # build the FOLLOW dependency graph
     # the FIRST data can be regarded as the input to some nodes of this graph
-    for gen in gens:
-        for symi in range(len(gen[1]) - 1):
-            a, b = gen[1][symi: symi + 2]
+    for pro in pros:
+        for symi in range(len(pro[1]) - 1):
+            a, b = pro[1][symi: symi + 2]
             FOLLOW[a] |= FIRST[b]
             if b in empty:
                 adj[a, b] = 1 # FOLLOW[a] depends on FOLLOW[b]
-        adj[gen[1][-1], gen[0]] = 1 # FOLLOW[last_symbol] depends on FOLLOW[left_symbol]
+        adj[pro[1][-1], pro[0]] = 1 # FOLLOW[last_symbol] depends on FOLLOW[left_symbol]
     # floyd algorithm
     for i in range(len(syms)):
         for j in range(len(syms)):
@@ -124,7 +175,7 @@ def solveFOLLOW():
                 FOLLOW[i] |= FOLLOW[j]
 
 def add(si, item):
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
     if item[:2] in stats[si] and item[2].issubset(stats[si][item[:2]]):
         return
     if item[:2] in stats[si]:
@@ -136,32 +187,32 @@ def add(si, item):
     if si not in group:
         group[si] = dict()
     while i < len(tmp):
-        gen = gens[tmp[i][0]]
-        if tmp[i][1] == len(gen[1]): # reduction
+        pro = pros[tmp[i][0]]
+        if tmp[i][1] == len(pro[1]): # reduction
             if -1 not in group[si]:
                 group[si][-1] = set()
             group[si][-1] |= set([tmp[i][:2]])
             i += 1
             continue
-        sym = gen[1][tmp[i][1]] # the symbol to be expanded
+        sym = pro[1][tmp[i][1]] # the symbol to be expanded
         if sym not in group[si]:
             group[si][sym] = set()
         group[si][sym] |= set([tmp[i][:2]])
         if sym not in gmap: # terminal symbol
             i += 1
             continue
-        if tmp[i][1] + 1 < len(gen[1]):
+        if tmp[i][1] + 1 < len(pro[1]):
             suc = set()
-            for j in range(tmp[i][1] + 1, len(gen[1])):
-                suc |= FIRST[gen[1][j]]
-                if gen[1][j] not in empty:
+            for j in range(tmp[i][1] + 1, len(pro[1])):
+                suc |= FIRST[pro[1][j]]
+                if pro[1][j] not in empty:
                     break
             else:
                 suc |= tmp[i][2]
         else:
             suc = set(tmp[i][2])
-        for g in gmap[sym]:
-            newItem = (g, 0, suc)
+        for p in gmap[sym]:
+            newItem = (p, 0, suc)
             if newItem[:2] not in stats[si]:
                 stats[si][newItem[:2]] = set(newItem[2])
                 tmp += [newItem]
@@ -171,31 +222,31 @@ def add(si, item):
         i += 1
 
 def dfs(si):
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
     for sym in group[si]:
         if sym == -1: # reduction
-            for g, dot in group[si][sym]:
-                for t in stats[si][g, dot]:
+            for p, dot in group[si][sym]:
+                for t in stats[si][p, dot]:
                     key = (si, t)
                     if key not in reduc:
                         reduc[key] = set()
-                    reduc[key] |= set([g])
+                    reduc[key] |= set([p])
         else: # non-reduction
             key = (si, sym)
-            tmp = tuple(sorted([(g, d, tuple(sorted(list(stats[si][g, d])))) for g,d in group[si][sym]]))
+            tmp = tuple(sorted([(p, d, tuple(sorted(list(stats[si][p, d])))) for p,d in group[si][sym]]))
             if tmp in imap:
                 shift[key] = imap[tmp]
             else:
                 shift[key] = len(stats)
                 stats += [dict()]
-                for g, dot in group[si][sym]:
-                    newItem = (g, dot + 1, set(stats[si][g, dot]))
+                for p, dot in group[si][sym]:
+                    newItem = (p, dot + 1, set(stats[si][p, dot]))
                     add(shift[key], newItem)
                 imap[tmp] = shift[key]
                 dfs(shift[key])
 
 def process():
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startStat, startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
     assert len(gmap[smap[START_SYMBOL]]) == 1
     for s in range(len(syms)):
         solveFIRST(s, set())
@@ -206,22 +257,23 @@ def process():
     dfs(startStat)
 
 def show_human():
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    conflicts = dict()
     print("Symbol total: " + str(len(syms)))
-    print("Status total: " + str(len(stats)))
-    corruption = 0
+    print("State total: " + str(len(stats)))
+    conflict = 0
     for key in shift.keys() | reduc.keys():
         l1 = 1 if key in shift else 0
         l2 = len(reduc[key]) if key in reduc else 0
-        corruption += 1 if l1 + l2 > 1 else 0
-    print("Corruption total: %d"%corruption)
+        conflict += 1 if l1 + l2 > 1 else 0
+    print("Conflict total: %d"%conflict)
     print("\nSymbols:\n")
     for i in range(len(syms)):
         print("'%s': %d"%(syms[i], i))
     print("\nFIRST:\n")
     for s in range(len(syms)):
         print(syms[s] + ": " + str([syms[i] for i in FIRST[s]]))
-    print("\nStatus:\n")
+    print("\nState:\n")
     for i in range(len(stats)):
         print("I%d:"%(i))
         for item in stats[i]:
@@ -243,10 +295,12 @@ def show_human():
         for s in term:
             if (i,s) in shift and (i,s) in reduc:
                 print("*    ", end='')
+                conflicts[i,s] = ["s%d"%shift[i,s]] + ["r%d"%t for t in reduc[i,s]]
             elif (i,s) in shift and (i,s) not in reduc:
                 print("s%-3d "%shift[i,s], end='')
             elif (i,s) not in shift and (i,s) in reduc:
                 if len(reduc[i,s]) > 1:
+                    conflicts[i,s] = ["s%d"%t for t in shift[i,s]] + ["r%d"%t for t in reduc[i,s]]
                     print("*    ", end='')
                 else:
                     if element(reduc[i,s]) == startGen:
@@ -263,10 +317,64 @@ def show_human():
             else:
                 print("     ", end='')
         print("")
+    # TODO: show the conflicts
 
 def show_c():
-    global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
-    pass # TODO
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    termN = len([i for i in range(len(syms)) if i not in gmap])
+    ntermN = len([i for i in range(len(syms)) if i in gmap])
+    GOTO = [["-1" for _ in range(len(syms))] for __ in range(len(stats))]
+    ACTION = [["'\\0'" for _ in range(termN)] for __ in range(len(stats))]
+    for i in range(len(stats)):
+        for j in range(len(syms)):
+            s = j
+            if j not in gmap: # terminal
+                if (i,s) in shift and (i,s) in reduc:
+                    hint = "/* " + ",".join(["s%d"%shift[i,s]] + ["r%d"%t for t in reduc[i,s]]) + " */"
+                    ACTION[i][s] = hint
+                    GOTO[i][s] = hint
+                elif (i,s) in shift and (i,s) not in reduc:
+                    ACTION[i][s] = "'s'"
+                    GOTO[i][s] = str(shift[i,s])
+                elif (i,s) not in shift and (i,s) in reduc:
+                    if len(reduc[i,s]) > 1:
+                        hint = "/* " + ",".join(["s%d"%shift[i,s]] + ["r%d"%t for t in reduc[i,s]]) + " */"
+                        ACTION[i][s] = hint
+                        GOTO[i][s] = hint
+                    else:
+                        if element(reduc[i,s]) == startGen:
+                            ACTION[i][s] = "'a'"
+                        else:
+                            ACTION[i][s] = "'r'"
+                            GOTO[i][s] = str(element(reduc[i,s]))
+            else: # non-terminal
+                if s == smap[START_SYMBOL]:
+                    continue
+                if (i,s) in shift:
+                    GOTO[i][s] = str(shift[i,s])
+    GOTO = "},\n    {".join([", ".join(l) for l in GOTO])
+    ACTION = "},\n    {".join([", ".join(l) for l in ACTION])
+    PRO_LEFT = ", ".join([str(pro[0]) for pro in pros])
+    PRO_LENGTH = ", ".join([str(len(pro[1])) for pro in pros])
+    RECOVER_SYMBOL = "},\n    set<int> {".join([", ".join([str(sym) for sym in range(len(syms)) if sym in gmap and (s,sym) in shift]) for s in range(len(stats))])
+    FOLLOW_CODE = "},\n    set<int> {".join([", ".join([str(sym) for sym in FOLLOW[s]]) for s in range(len(syms))])
+    PRO = ",\n    ".join(['"' + p2s(p) + '"' for p in range(len(pros))])
+    ERROR_MESSAGE = ",\n    ".join(["\"Line %d, Col %d: Unexpected token: %s\\n\""]*len(stats))
+    info = (len(stats),
+            len(syms),
+            len(pros),
+            termN,
+            startStat,
+            smap[END_SYMBOL],
+            GOTO,
+            ACTION,
+            PRO_LEFT,
+            PRO_LENGTH,
+            RECOVER_SYMBOL,
+            FOLLOW_CODE,
+            PRO,
+            ERROR_MESSAGE)
+    print(code%info)
 
 def main(argv):
     filename = None

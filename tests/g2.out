@@ -1,0 +1,105 @@
+Symbol total: 9
+State total: 13
+Conflict total: 1
+
+Symbols:
+
+'S': 0
+'#': 1
+'A': 2
+'[': 3
+'B': 4
+'X': 5
+']': 6
+'a': 7
+'b': 8
+
+FIRST:
+
+S: ['[']
+#: ['#']
+A: ['[']
+[: ['[']
+B: ['b', 'a']
+X: ['b', 'a']
+]: [']']
+a: ['a']
+b: ['b']
+
+State:
+
+I0:
+S -> @ A; #
+A -> @ [ B; #
+
+I1:
+S -> A @; #
+
+I2:
+A -> [ @ B; #
+B -> @ X ]; #/[
+B -> @ B A; #/[
+X -> @ X a; b/]/a
+X -> @ X b; b/]/a
+X -> @ a; b/]/a
+X -> @ b; b/]/a
+
+I3:
+B -> B @ A; #/[
+A -> @ [ B; #/[
+A -> [ B @; #
+
+I4:
+B -> B A @; #/[
+
+I5:
+A -> [ @ B; #/[
+B -> @ X ]; #/[
+B -> @ B A; #/[
+X -> @ X a; b/]/a
+X -> @ X b; b/]/a
+X -> @ a; b/]/a
+X -> @ b; b/]/a
+
+I6:
+B -> B @ A; #/[
+A -> @ [ B; #/[
+A -> [ B @; #/[
+
+I7:
+B -> X @ ]; #/[
+X -> X @ b; b/]/a
+X -> X @ a; b/]/a
+
+I8:
+B -> X ] @; #/[
+
+I9:
+X -> X b @; b/]/a
+
+I10:
+X -> X a @; b/]/a
+
+I11:
+X -> a @; b/]/a
+
+I12:
+X -> b @; b/]/a
+
+
+Table:
+
+      #    [    ]    a    b    A    B    X    
+I0         s2                  1              
+I1    acc                                     
+I2                   s11  s12       3    7    
+I3    r1   s5                  4              
+I4    r3   r3                                 
+I5                   s11  s12       6    7    
+I6    r1   *                   4              
+I7              s8   s10  s9                  
+I8    r2   r2                                 
+I9              r5   r5   r5                  
+I10             r4   r4   r4                  
+I11             r6   r6   r6                  
+I12             r7   r7   r7                  
