@@ -35,7 +35,9 @@ const LexicalType DATATYPE_KEYWORD_CODES[DATATYPE_KEYWORDS_NUM] = {INT, FLOAT, B
 
 const TokenTableEntry templateTokenEntry = {
     NONE, // type
-    0 // index
+    0, // index
+    0, // row
+    0 // col
 #ifdef MATCH_SOURCE
     ,0, // start
     0 // end
@@ -79,6 +81,8 @@ int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &sy
             i++;
         }
         if(i == l) break;
+        int currentRow = row;
+        int currentCol = col;
         // judge the type of token by its first character
         bool isComment = false;
         int tokenLength = 0;
@@ -99,6 +103,10 @@ int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &sy
             tokenLength = 0;
             skipped = 1; // skip the character
             printf(LEXICAL_ERROR_MESSAGE[err], row, col, s[i]);
+        }
+        if(tokenLength > 0) {
+            tokenTable.back().row = currentRow;
+            tokenTable.back().col = currentCol;
         }
 #ifdef MATCH_SOURCE
         if(tokenLength > 0) { // token consumed successfully

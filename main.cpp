@@ -2,6 +2,8 @@
 #include <cstring>
 
 #include "lex.h"
+#include "parser.h"
+#include "productions.h"
 
 const char *usage = 
 "Usage:\n\
@@ -157,38 +159,67 @@ int main(int argc, char **argv) {
     }
     buffer[length] = '\0';
     fclose(fs);
+    
+    if(mode == NONE_MODE) {
+        delete buffer;
+        return 0;
+    }
+
+    // lexical analysis
+    TokenTable *tokenTable = new TokenTable();
+    SymbolTable *symbolTable = new SymbolTable();
+    int err = lexicalAnalyse(buffer, length, *tokenTable, *symbolTable);
+    if(err) putchar('\n');
+    printf("Token sequence:\n");
+    for(TokenTable::iterator it = tokenTable->begin(); it != tokenTable->end(); it++) {
+#ifdef MATCH_SOURCE
+        if(it->type == COMMENT) {
+            printf("/* ... */     ");
+        } else {
+            for(int i = it->start; i < it->end; i++)
+                putchar(buffer[i]);
+            for(int i = 0; i < 14 - (it->end - it->start); i++)
+                putchar(' ');
+        }
+        printf("  ");
+#endif
+        if(it->type == IDENTIFIER || it->type == CONSTANT)
+            printf("< %-12s, %-6d >\n", lexicalTypeString[it->type], it->index);
+        else
+            printf("< %-12s,        >\n", lexicalTypeString[it->type]);
+    }
+    printf("\nSymbol table:\n");
+    for(unsigned long i = 1; i != symbolTable->size(); i++) {
+        if((*symbolTable)[i].isString)
+            printf("%-4lu  %s\n", i, (*symbolTable)[i].value.stringValue);
+        else if((*symbolTable)[i].value.numberValue.isFloat)
+            printf("%-4lu  %f\n", i, (*symbolTable)[i].value.numberValue.value.floatValue);
+        else
+            printf("%-4lu  %d\n", i, (*symbolTable)[i].value.numberValue.value.intValue);
+    }
+    delete buffer;
 
     if(mode == LEXICAL) {
-        TokenTable *tokenTable = new TokenTable();
-        SymbolTable *symbolTable = new SymbolTable();
-        int err = lexicalAnalyse(buffer, length, *tokenTable, *symbolTable);
-        if(err) putchar('\n');
-        printf("Token sequence:\n");
-        for(TokenTable::iterator it = tokenTable->begin(); it != tokenTable->end(); it++) {
-#ifdef MATCH_SOURCE
-            if(it->type == COMMENT) {
-                printf("/* ... */     ");
-            } else {
-                for(int i = it->start; i < it->end; i++)
-                    putchar(buffer[i]);
-                for(int i = 0; i < 14 - (it->end - it->start); i++)
-                    putchar(' ');
-            }
-            printf("  ");
-#endif
-            if(it->type == IDENTIFIER || it->type == CONSTANT)
-                printf("< %-12s, %-6d >\n", lexicalTypeString[it->type], it->index);
-            else
-                printf("< %-12s,        >\n", lexicalTypeString[it->type]);
-        }
-        printf("\nSymbol table:\n");
-        for(unsigned long i = 1; i != symbolTable->size(); i++) {
-            if((*symbolTable)[i].isString)
-                printf("%-4lu  %s\n", i, (*symbolTable)[i].value.stringValue);
-            else if((*symbolTable)[i].value.numberValue.isFloat)
-                printf("%-4lu  %f\n", i, (*symbolTable)[i].value.numberValue.value.floatValue);
-            else
-                printf("%-4lu  %d\n", i, (*symbolTable)[i].value.numberValue.value.intValue);
-        }
+        delete tokenTable;
+        delete symbolTable;
+        return 0;
     }
+
+    // gramma analysis
+#ifdef PRINT_PRODUCTIONS
+    ProductionSequence *productionSequence = new ProductionSequence();
+    err = parse(*tokenTable, *productionSequence);
+    if(err) putchar('\n');
+    printf("\nProduction sequence:\n");
+    for(ProductionSequence::iterator it = productionSequence->begin(); it != productionSequence->end(); it++)
+        printf("%s\n", PRO[*it]);
+    if(mode == GRAMMA) {
+        delete tokenTable;
+        delete symbolTable;
+        delete productionSequence;
+        return 0;
+    }
+#else
+    err = parse(*tokenTable);
+#endif
 }
