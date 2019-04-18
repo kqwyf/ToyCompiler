@@ -73,6 +73,5 @@ typedef vector<TokenTableEntry> TokenTable;
 typedef vector<SymbolTableEntry> SymbolTable;
 
 int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable);
-void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable);
 
 #endif

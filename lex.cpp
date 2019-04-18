@@ -57,6 +57,7 @@ int consumeOP(const char *s, TokenTable &tokenTable);
 int consumeDL(const char *s, TokenTable &tokenTable);
 int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable);
 int consumeCM(const char *s, TokenTable &tokenTable);
+void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable);
 
 int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable) {
     identifierMap.clear();
