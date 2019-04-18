@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 
 # gen structure: (left, (right1, right2, ...))
 # item structure: (gen#, dot_location, succeeding_symbol_set)
@@ -14,6 +15,7 @@ group = dict() # stat# -> (symbol#(-1 for reduction) -> set((gen#, dot_location)
 shift = dict() # (stat#, symbol#) -> stat#
 reduc = dict() # (stat#, symbol#) -> set(gen#)
 FIRST = dict() # symbol# -> set(symbol#)
+FOLLOW = dict() # symbol# -> set(symbol#)
 smap = dict() # symbol -> symbol#
 gmap = dict() # symbol# -> list(gen#)
 imap = dict() # sorted_tuple((gen#, dot_location, sorted_succeeding_symbol_tuple)) -> stat#
@@ -95,6 +97,32 @@ def solveFIRST(sym, visited):
     visited.remove(sym)
     return result
 
+def solveFOLLOW():
+    adj = np.zeros((len(syms), len(syms)))
+    for s in range(len(syms)):
+        FOLLOW[s] = set()
+    FOLLOW[smap[START_SYMBOL]].add(smap[END_SYMBOL])
+    # build the FOLLOW dependency graph
+    # the FIRST data can be regarded as the input to some nodes of this graph
+    for gen in gens:
+        for symi in range(len(gen[1]) - 1):
+            a, b = gen[1][symi: symi + 2]
+            FOLLOW[a] |= FIRST[b]
+            if b in empty:
+                adj[a, b] = 1 # FOLLOW[a] depends on FOLLOW[b]
+        adj[gen[1][-1], gen[0]] = 1 # FOLLOW[last_symbol] depends on FOLLOW[left_symbol]
+    # floyd algorithm
+    for i in range(len(syms)):
+        for j in range(len(syms)):
+            for k in range(len(syms)):
+                if adj[i, k] == 1 and adj[k, j] == 1:
+                    adj[i, j] = 1
+    # collect the FIRST data into FOLLOWs
+    for i in range(len(syms)):
+        for j in range(len(syms)):
+            if adj[i, j] == 1:
+                FOLLOW[i] |= FOLLOW[j]
+
 def add(si, item):
     global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
     if item[:2] in stats[si] and item[2].issubset(stats[si][item[:2]]):
@@ -168,9 +196,10 @@ def dfs(si):
 
 def process():
     global startGen, syms, gens, stats, FIRST, shift, reduc, smap, gmap, imap
+    assert len(gmap[smap[START_SYMBOL]]) == 1
     for s in range(len(syms)):
         solveFIRST(s, set())
-    assert len(gmap[smap[START_SYMBOL]]) == 1
+    solveFOLLOW()
     startStat = len(stats)
     stats += [dict()]
     add(startStat, tuple([gmap[smap[START_SYMBOL]][0], 0, tuple([smap[END_SYMBOL]])])); ### S -> .A; #
