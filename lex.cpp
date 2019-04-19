@@ -37,7 +37,8 @@ const TokenTableEntry templateTokenEntry = {
     NONE, // type
     0, // index
     0, // row
-    0 // col
+    0, // col
+    NULL // source
 #ifdef MATCH_SOURCE
     ,0, // start
     0 // end
@@ -107,6 +108,9 @@ int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &sy
         if(tokenLength > 0) {
             tokenTable.back().row = currentRow;
             tokenTable.back().col = currentCol;
+            tokenTable.back().source = new char[tokenLength + 1];
+            strncpy(tokenTable.back().source, s + i, tokenLength);
+            tokenTable.back().source[tokenLength] = '\0';
         }
 #ifdef MATCH_SOURCE
         if(tokenLength > 0) { // token consumed successfully
@@ -124,12 +128,16 @@ int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &sy
 }
 
 void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable) {
-    for(TokenTable::iterator it = tokenTable.begin(); it != tokenTable.end(); it++)
-        if(it->type == IDENTIFIER || it->type == COMMENT)
+    for(TokenTable::iterator it = tokenTable.begin(); it != tokenTable.end(); it++) {
+        if(it->source)
+            delete it->source;
+        if(it->type == IDENTIFIER || it->type == COMMENT) {
             if(symbolTable[it->index].value.stringValue != NULL) {
                 delete symbolTable[it->index].value.stringValue;
                 symbolTable[it->index].value.stringValue = NULL;
             }
+        }
+    }
     tokenTable.clear();
     symbolTable.clear();
 }

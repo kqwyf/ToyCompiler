@@ -65,6 +65,7 @@ struct TokenTableEntry {
     LexicalType type;
     int index;
     int row, col;
+    char *source;
 #ifdef MATCH_SOURCE
     int start, end;
 #endif
