@@ -1,7 +1,7 @@
 #ifndef __PRODUCTIONS_H__
 #define __PRODUCTIONS_H__
 
-static const int PRO_N = 74;
+static const int PRO_N = 78;
 
 const char *(PRO[PRO_N]) = {
     "S -> PROGRAM",
@@ -13,6 +13,7 @@ const char *(PRO[PRO_N]) = {
     "STATEMENT -> LOOP",
     "STATEMENT -> EXPRESSION ;",
     "STATEMENT -> STATEMENTS_BEGIN STATEMENT_S }",
+    "STATEMENT -> { }",
     "STATEMENTS_BEGIN -> {",
     "DECLARE_S -> DECLARE_S DECLARE",
     "DECLARE_S -> DECLARE",
@@ -25,8 +26,10 @@ const char *(PRO[PRO_N]) = {
     "DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_S } ;",
     "DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {",
     "DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }",
+    "DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID }",
     "DECLARE_FUNC_BEGIN -> TYPE identifier (",
     "DECLARE_FUNC_MID -> PARAMETERS ) {",
+    "DECLARE_FUNC_MID -> ) {",
     "PARAMETERS -> PARAMETERS , TYPE identifier",
     "PARAMETERS -> TYPE identifier",
     "TYPE -> TYPE_BASIC",
@@ -44,7 +47,10 @@ const char *(PRO[PRO_N]) = {
     "SELECT_MID -> else",
     "LOOP -> LOOP_BEGIN STATEMENT",
     "LOOP_BEGIN -> while ( EXPRESSION )",
+    "EXPRESSION_S -> EXPRESSION_S , EXPRESSION",
+    "EXPRESSION_S -> EXPRESSION",
     "EXPRESSION1 -> identifier ( EXPRESSION_S )",
+    "EXPRESSION1 -> identifier ( )",
     "EXPRESSION2 -> EXPRESSION1",
     "EXPRESSION2 -> identifier",
     "EXPRESSION2 -> constant",
@@ -68,8 +74,6 @@ const char *(PRO[PRO_N]) = {
     "EXPRESSION8 -> EXPRESSION7",
     "EXPRESSION8 -> EXPRESSION8 = EXPRESSION7",
     "EXPRESSION -> EXPRESSION8",
-    "EXPRESSION_S -> EXPRESSION_S , EXPRESSION",
-    "EXPRESSION_S -> EXPRESSION",
     "IDENTIFIER_S -> IDENTIFIER_S , identifier",
     "IDENTIFIER_S -> identifier",
     "OPERATOR_REL -> ==",

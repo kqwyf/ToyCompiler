@@ -1,8 +1,8 @@
 // 以下全大写单词为非终结符（非终结符末尾的标号仅为语义定义作区分用），全小写单词及除'|'外的符号均为终结符，单个'|'用于分隔多个推导式，#为终止符
 
 程序：
-S -> DECLARE_S #
-   | #
+PROGRAM -> DECLARE_S #
+         | #
 
 语句：
 STATEMENT_S -> STATEMENT_S1 STATEMENT
@@ -12,6 +12,7 @@ STATEMENT -> DECLARE
            | LOOP
            | EXPRESSION ;
            | STATEMENTS_BEGIN STATEMENT_S }
+           | { }
 STATEMENTS_BEGIN -> {
 
 声明语句：
@@ -29,8 +30,10 @@ DECLARE -> DECLARE_VAR
     DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
     声明函数：
     DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+                  | DECLARE_FUNC_BEGIN DECLARE_FUNC_MID }
     DECLARE_FUNC_BEGIN -> TYPE identifier (
     DECLARE_FUNC_MID -> PARAMETERS ) {
+                      | ) {
         PARAMETERS -> PARAMETERS , TYPE identifier
                     | TYPE identifier
 
@@ -60,12 +63,13 @@ LOOP_BEGIN -> while ( EXPRESSION )
 
 表达式（以下排序同时表示优先级，优先级向下递减）：
 EXPRESSION -> identifier ( EXPRESSION_S )
+            | identifier ( )
             | identifier
             | constant
             | ( EXPRESSION1 )
-            | ! EXPRESSION
-            | - EXPRESSION
-            | EXPRESSION . identifier
+            | ! EXPRESSION1
+            | - EXPRESSION1
+            | EXPRESSION1 . identifier
             | EXPRESSION1 [ EXPRESSION2 ]
             | EXPRESSION1 OPERATOR_ARITH EXPRESSION2
             | EXPRESSION1 OPERATOR_REL EXPRESSION2

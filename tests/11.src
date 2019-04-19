@@ -1,0 +1,25 @@
+int main() {
+    if(a) b; else c;
+    if(a) b;
+    if(a)
+        if(b)
+            c;
+        else
+            b;
+    if(a) {
+        b;
+    }
+    if(a) {
+        b;
+    } else {
+        c;
+    }
+    if(a) b;
+    else {
+        c;
+    }
+    if(a) {
+        if(b) c;
+        else d;
+    } else e;
+}

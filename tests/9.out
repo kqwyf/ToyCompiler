@@ -1,140 +1,149 @@
 Token sequence:
 int             < INT         ,        >
-parse           < IDENTIFIER  , 1      >
-(               < LEFTPAREN   ,        >
-int             < INT         ,        >
-a               < IDENTIFIER  , 2      >
+a               < IDENTIFIER  , 1      >
 ,               < COMMA       ,        >
-int             < INT         ,        >
-b               < IDENTIFIER  , 3      >
-)               < RIGHTPAREN  ,        >
-{               < LEFTBRACE   ,        >
-print           < IDENTIFIER  , 4      >
-(               < LEFTPAREN   ,        >
-a               < IDENTIFIER  , 2      >
-)               < RIGHTPAREN  ,        >
+b               < IDENTIFIER  , 2      >
 ;               < SEMICOLON   ,        >
-print           < IDENTIFIER  , 4      >
-(               < LEFTPAREN   ,        >
-b               < IDENTIFIER  , 3      >
-)               < RIGHTPAREN  ,        >
+float           < FLOAT       ,        >
+c               < IDENTIFIER  , 3      >
+,               < COMMA       ,        >
+d               < IDENTIFIER  , 4      >
+,               < COMMA       ,        >
+e               < IDENTIFIER  , 5      >
+;               < SEMICOLON   ,        >
+bool            < BOOL        ,        >
+f               < IDENTIFIER  , 6      >
+;               < SEMICOLON   ,        >
+struct          < STRUCT      ,        >
+person          < IDENTIFIER  , 7      >
+{               < LEFTBRACE   ,        >
+int             < INT         ,        >
+age             < IDENTIFIER  , 8      >
 ;               < SEMICOLON   ,        >
 }               < RIGHTBRACE  ,        >
-int             < INT         ,        >
-main            < IDENTIFIER  , 5      >
-(               < LEFTPAREN   ,        >
-int             < INT         ,        >
-argc            < IDENTIFIER  , 6      >
-)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+struct          < STRUCT      ,        >
+string          < IDENTIFIER  , 9      >
 {               < LEFTBRACE   ,        >
-parse           < IDENTIFIER  , 1      >
-(               < LEFTPAREN   ,        >
-argc            < IDENTIFIER  , 6      >
-,               < COMMA       ,        >
-argc            < IDENTIFIER  , 6      >
-)               < RIGHTPAREN  ,        >
+int             < INT         ,        >
+[               < LEFTBRACKET ,        >
+101             < CONSTANT    , 10     >
+]               < RIGHTBRACKET,        >
+s               < IDENTIFIER  , 11     >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+len             < IDENTIFIER  , 12     >
 ;               < SEMICOLON   ,        >
 }               < RIGHTBRACE  ,        >
+;               < SEMICOLON   ,        >
+struct          < STRUCT      ,        >
+matrix50        < IDENTIFIER  , 13     >
+{               < LEFTBRACE   ,        >
+float           < FLOAT       ,        >
+[               < LEFTBRACKET ,        >
+50              < CONSTANT    , 14     >
+]               < RIGHTBRACKET,        >
+[               < LEFTBRACKET ,        >
+50              < CONSTANT    , 14     >
+]               < RIGHTBRACKET,        >
+data            < IDENTIFIER  , 15     >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+w               < IDENTIFIER  , 16     >
+,               < COMMA       ,        >
+h               < IDENTIFIER  , 17     >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+;               < SEMICOLON   ,        >
 
 Symbol table:
-1     parse
-2     a
-3     b
-4     print
-5     main
-6     argc
+1     a
+2     b
+3     c
+4     d
+5     e
+6     f
+7     person
+8     age
+9     string
+10    101
+11    s
+12    len
+13    matrix50
+14    50
+15    data
+16    w
+17    h
 
 Production sequence:
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
-DECLARE_FUNC_BEGIN -> TYPE identifier (
+IDENTIFIER_S -> identifier
+IDENTIFIER_S -> IDENTIFIER_S , identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE
+TYPE_BASIC -> float
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+IDENTIFIER_S -> IDENTIFIER_S , identifier
+IDENTIFIER_S -> IDENTIFIER_S , identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> bool
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_STRUCT -> struct identifier
+DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
-PARAMETERS -> TYPE identifier
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE
+DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_S } ;
+DECLARE -> DECLARE_STRUCT
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_STRUCT -> struct identifier
+DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
 TYPE_BASIC -> int
-TYPE -> TYPE_BASIC
-PARAMETERS -> PARAMETERS , TYPE identifier
-DECLARE_FUNC_MID -> PARAMETERS ) {
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-EXPRESSION_S -> EXPRESSION
-EXPRESSION1 -> identifier ( EXPRESSION_S )
-EXPRESSION2 -> EXPRESSION1
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-EXPRESSION_S -> EXPRESSION
-EXPRESSION1 -> identifier ( EXPRESSION_S )
-EXPRESSION2 -> EXPRESSION1
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT_S STATEMENT
-DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
-DECLARE -> DECLARE_FUNC
+TYPE_ARRAY -> TYPE_BASIC [ constant ]
+TYPE -> TYPE_ARRAY
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
 DECLARE_S -> DECLARE
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
-DECLARE_FUNC_BEGIN -> TYPE identifier (
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_S } ;
+DECLARE -> DECLARE_STRUCT
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_STRUCT -> struct identifier
+DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
+TYPE_BASIC -> float
+TYPE_ARRAY -> TYPE_BASIC [ constant ]
+TYPE_ARRAY -> TYPE_ARRAY [ constant ]
+TYPE -> TYPE_ARRAY
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
-PARAMETERS -> TYPE identifier
-DECLARE_FUNC_MID -> PARAMETERS ) {
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-EXPRESSION_S -> EXPRESSION
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-EXPRESSION_S -> EXPRESSION_S , EXPRESSION
-EXPRESSION1 -> identifier ( EXPRESSION_S )
-EXPRESSION2 -> EXPRESSION1
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT
-DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
-DECLARE -> DECLARE_FUNC
+IDENTIFIER_S -> identifier
+IDENTIFIER_S -> IDENTIFIER_S , identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_S } ;
+DECLARE -> DECLARE_STRUCT
 DECLARE_S -> DECLARE_S DECLARE
 PROGRAM -> DECLARE_S

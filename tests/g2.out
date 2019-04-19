@@ -103,3 +103,7 @@ I9              r5   r5   r5
 I10             r4   r4   r4                  
 I11             r6   r6   r6                  
 I12             r7   r7   r7                  
+
+Conflicts:
+
+I6 ('[') -> s5, r1

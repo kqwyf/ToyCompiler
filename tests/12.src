@@ -1,0 +1,11 @@
+int main() {
+    while(a) b;
+    while(a) {
+        b;
+    }
+    while(a)
+        if(a) b;
+    while(a) {
+        print(b);
+    }
+}

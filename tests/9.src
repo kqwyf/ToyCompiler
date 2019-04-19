@@ -1,8 +1,17 @@
-int parse(int a, int b) {
-    print(a);
-    print(b);
-}
+int a, b;
+float c, d, e;
+bool f;
 
-int main(int argc) {
-    parse(argc, argc);
-}
+struct person {
+    int age;
+};
+
+struct string {
+    int[101] s;
+    int len;
+};
+
+struct matrix50 {
+    float[50][50] data;
+    int w, h;
+};

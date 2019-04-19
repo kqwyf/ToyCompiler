@@ -1,0 +1,10 @@
+float calc(float a, bool b) {
+}
+
+int main() {
+    int a;
+    struct id {
+        float b;
+    };
+    calc(a, b);
+}
