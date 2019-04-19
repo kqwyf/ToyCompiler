@@ -17,7 +17,7 @@ reduc = dict() # (stat#, symbol#) -> set(pro#)
 FIRST = dict() # symbol# -> set(symbol#)
 FOLLOW = dict() # symbol# -> set(symbol#)
 smap = dict() # symbol -> symbol#
-gmap = dict() # symbol# -> list(pro#)
+pmap = dict() # symbol# -> list(pro#)
 imap = dict() # sorted_tuple((pro#, dot_location, sorted_succeeding_symbol_tuple)) -> stat#
 
 code = """/*
@@ -46,9 +46,9 @@ const char ACTION[STATE_N][TERMINAL_N] = {
     {%s}
 };
 const int PRO_LEFT[PRO_N] = {%s};
-const int PRO_LENGTH[PRO_N] = {%s}; // length of right of the pro
+const int PRO_LENGTH[PRO_N] = {%s}; // length of right part of the production
 
-const set<int> RECOVER_SYMBOL[STATE_N] = { // an arbitrary non-terminal symbol which is related to this state in GOTO, -1 if not exists
+const set<int> RECOVER_SYMBOL[STATE_N] = { // non-terminal symbols which are related to this state in GOTO
     set<int> {%s}
 };
 
@@ -56,15 +56,15 @@ const set<int> FOLLOW[SYMBOL_N] = {
     set<int> {%s}
 };
 
-const char *(PRO[PRO_N]) = {
-    %s
-};
-
 inline bool isTerminal(int label) {
     return label < TERMINAL_N;
 }
 
 const char *(GRAMMA_ERROR_MESSAGE[]) = {
+    %s
+};
+
+const char *(PRO[PRO_N]) = {
     %s
 };
 
@@ -84,14 +84,14 @@ def i2s(i, suc):
     return syms[pros[i[0]][0]] + " -> " + " ".join(right) + "; " + "/".join([syms[s] for s in suc])
 
 def addId(line):
-    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
     ids = line.split()
     for i in range(len(ids)):
         smap[ids[i]] = i
         syms += [ids[i]]
 
 def read(f):
-    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
     if START_SYMBOL not in smap:
         smap[START_SYMBOL] = len(syms)
         syms += [START_SYMBOL]
@@ -100,6 +100,8 @@ def read(f):
         syms += [END_SYMBOL]
     isFirst = True
     for line in f.readlines():
+        if line.strip() == "":
+            continue
         l = line.split()
         if l[0] != '|':
             first = l[0]
@@ -107,13 +109,13 @@ def read(f):
                 smap[first] = len(syms)
                 syms += [first]
             start = 2
-            gmap[smap[first]] = []
+            pmap[smap[first]] = []
         else:
             start = 1
         fs = smap[first]
         if isFirst:
             isFirst = False
-            gmap[smap[START_SYMBOL]] = [len(pros)]
+            pmap[smap[START_SYMBOL]] = [len(pros)]
             startGen = len(pros)
             pros += [(smap[START_SYMBOL], tuple([fs]))]
         if len(l) <= start: # empty-able production
@@ -125,21 +127,21 @@ def read(f):
                 smap[w] = len(syms)
                 syms += [w]
             right += [smap[w]]
-        gmap[fs] += [len(pros)]
+        pmap[fs] += [len(pros)]
         pros += [tuple([fs, tuple(right)])]
 
 def solveFIRST(sym, visited):
-    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
     if sym in visited:
         return set()
     if sym in FIRST:
         return FIRST[sym]
-    if sym not in gmap: # terminal
+    if sym not in pmap: # terminal
         FIRST[sym] = set([sym])
         return FIRST[sym]
     visited.add(sym)
     result = set()
-    for p in gmap[sym]:
+    for p in pmap[sym]:
         for s in pros[p][1]:
             result |= solveFIRST(s, visited)
             if s not in empty:
@@ -175,7 +177,7 @@ def solveFOLLOW():
                 FOLLOW[i] |= FOLLOW[j]
 
 def add(si, item):
-    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
     if item[:2] in stats[si] and item[2].issubset(stats[si][item[:2]]):
         return
     if item[:2] in stats[si]:
@@ -198,7 +200,7 @@ def add(si, item):
         if sym not in group[si]:
             group[si][sym] = set()
         group[si][sym] |= set([tmp[i][:2]])
-        if sym not in gmap: # terminal symbol
+        if sym not in pmap: # terminal symbol
             i += 1
             continue
         if tmp[i][1] + 1 < len(pro[1]):
@@ -211,8 +213,16 @@ def add(si, item):
                 suc |= tmp[i][2]
         else:
             suc = set(tmp[i][2])
-        for p in gmap[sym]:
+        for p in pmap[sym]:
             newItem = (p, 0, suc)
+            if newItem[:2] not in stats[si]:
+                stats[si][newItem[:2]] = set(newItem[2])
+                tmp += [newItem]
+            elif not newItem[2] <= stats[si][newItem[:2]]:
+                stats[si][newItem[:2]] |= newItem[2]
+                tmp += [newItem]
+        if sym in empty: # deal with the empty production
+            newItem = (tmp[i][0], tmp[i][1] + 1, set(tmp[i][2]))
             if newItem[:2] not in stats[si]:
                 stats[si][newItem[:2]] = set(newItem[2])
                 tmp += [newItem]
@@ -222,7 +232,7 @@ def add(si, item):
         i += 1
 
 def dfs(si):
-    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
     for sym in group[si]:
         if sym == -1: # reduction
             for p, dot in group[si][sym]:
@@ -246,18 +256,18 @@ def dfs(si):
                 dfs(shift[key])
 
 def process():
-    global startStat, startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
-    assert len(gmap[smap[START_SYMBOL]]) == 1
+    global startStat, startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
+    assert len(pmap[smap[START_SYMBOL]]) == 1
     for s in range(len(syms)):
         solveFIRST(s, set())
     solveFOLLOW()
     startStat = len(stats)
     stats += [dict()]
-    add(startStat, tuple([gmap[smap[START_SYMBOL]][0], 0, tuple([smap[END_SYMBOL]])])); ### S -> .A; #
+    add(startStat, tuple([pmap[smap[START_SYMBOL]][0], 0, tuple([smap[END_SYMBOL]])])); ### S -> .A; #
     dfs(startStat)
 
 def show_human():
-    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
     conflicts = dict()
     print("Symbol total: " + str(len(syms)))
     print("State total: " + str(len(stats)))
@@ -280,8 +290,8 @@ def show_human():
             print(i2s(item, stats[i][item]))
         print("")
     print("\nTable:\n")
-    term = [i for i in range(len(syms)) if i not in gmap]
-    nterm = [i for i in range(len(syms)) if i in gmap]
+    term = [i for i in range(len(syms)) if i not in pmap]
+    nterm = [i for i in range(len(syms)) if i in pmap]
     print("      ", end='')
     for s in term:
         print(syms[s][:3] + " "*(5-min(len(syms[s]), 3)), end='')
@@ -317,18 +327,20 @@ def show_human():
             else:
                 print("     ", end='')
         print("")
-    # TODO: show the conflicts
+    print("\nConflicts:\n")
+    for i,s in conflicts:
+        print("I%d ('%s') -> %s"%(i, syms[s], ", ".join(conflicts[i,s])))
 
 def show_c():
-    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, gmap, imap
-    termN = len([i for i in range(len(syms)) if i not in gmap])
-    ntermN = len([i for i in range(len(syms)) if i in gmap])
+    global startGen, syms, pros, stats, FIRST, shift, reduc, smap, pmap, imap
+    termN = len([i for i in range(len(syms)) if i not in pmap])
+    ntermN = len([i for i in range(len(syms)) if i in pmap])
     GOTO = [["-1" for _ in range(len(syms))] for __ in range(len(stats))]
     ACTION = [["'\\0'" for _ in range(termN)] for __ in range(len(stats))]
     for i in range(len(stats)):
         for j in range(len(syms)):
             s = j
-            if j not in gmap: # terminal
+            if j not in pmap: # terminal
                 if (i,s) in shift and (i,s) in reduc:
                     hint = "/* " + ",".join(["s%d"%shift[i,s]] + ["r%d"%t for t in reduc[i,s]]) + " */"
                     ACTION[i][s] = hint
@@ -356,7 +368,7 @@ def show_c():
     ACTION = "},\n    {".join([", ".join(l) for l in ACTION])
     PRO_LEFT = ", ".join([str(pro[0]) for pro in pros])
     PRO_LENGTH = ", ".join([str(len(pro[1])) for pro in pros])
-    RECOVER_SYMBOL = "},\n    set<int> {".join([", ".join([str(sym) for sym in range(len(syms)) if sym in gmap and (s,sym) in shift]) for s in range(len(stats))])
+    RECOVER_SYMBOL = "},\n    set<int> {".join([", ".join([str(sym) for sym in range(len(syms)) if sym in pmap and (s,sym) in shift]) for s in range(len(stats))])
     FOLLOW_CODE = "},\n    set<int> {".join([", ".join([str(sym) for sym in FOLLOW[s]]) for s in range(len(syms))])
     PRO = ",\n    ".join(['"' + p2s(p) + '"' for p in range(len(pros))])
     ERROR_MESSAGE = ",\n    ".join(["\"Line %d, Col %d: Unexpected token: %s\\n\""]*len(stats))
@@ -372,8 +384,8 @@ def show_c():
             PRO_LENGTH,
             RECOVER_SYMBOL,
             FOLLOW_CODE,
-            PRO,
-            ERROR_MESSAGE)
+            ERROR_MESSAGE,
+            PRO)
     print(code%info)
 
 def main(argv):
