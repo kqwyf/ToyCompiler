@@ -16,7 +16,7 @@ const AnalyserStackItem templateStackItem = {
 
 AnalyserStack *stack = NULL;
 
-///////////////////////////////////
+#ifdef DEBUG
 void printStack() {
     for(int i = 0; (unsigned long)i < stack->size(); i++)
         printf("%-3d|", (*stack)[i].stat);
@@ -25,7 +25,7 @@ void printStack() {
         printf("%-3d|", (*stack)[i].sym.label);
     putchar('\n');
 }
-///////////////////////////////////
+#endif
 
 void push(int stat, GrammaSymbol sym);
 void pop();
@@ -44,8 +44,10 @@ int parse(TokenTable &tokenTable) {
     push(INIT_STATE, endSymbol);
     int i = 0;
     while((unsigned long)i <= tokenTable.size() && !stack->empty()) {
-        //printStack(); ////////////////////////////////
-        //putchar('\n'); ///////////////////////////////
+#ifdef DEBUG
+        printStack();
+        putchar('\n');
+#endif
         TokenTableEntry entry; 
         int type = NONE; // when it reaches the end of the token table, there is always an end symbol
         if(((unsigned long)i < tokenTable.size())) {
@@ -57,9 +59,10 @@ int parse(TokenTable &tokenTable) {
             continue;
         }
         bool err = false;
-        //printf("[DEBUG] key : %d, %d\n", current(), type); ///////////////////////////////
         char action = ACTION[current()][type];
-        //printf("[DEBUG] Action: %c\n", action == '\0' ? '0' : action); //////////////////////////////////
+#ifdef DEBUG
+        printf("[DEBUG] Action: %c\n", action == '\0' ? '0' : action);
+#endif
         if(action == 's') {
             int stat = GOTO[current()][type];
             if(stat < 0) {
@@ -69,6 +72,9 @@ int parse(TokenTable &tokenTable) {
                 sym.label = type;
                 push(stat, sym);
                 i++;
+#ifdef DEBUG
+                printf("[DEBUG] Shift symbol: %d\n", type);
+#endif
             }
         } else if(action == 'r') {
             int pro = GOTO[current()][type];
@@ -80,6 +86,9 @@ int parse(TokenTable &tokenTable) {
                 sym.label = PRO_LEFT[pro];
                 int stat = GOTO[current()][sym.label];
                 push(stat, sym);
+#ifdef DEBUG
+                printf("[DEBUG] Reduce: %d\n", pro);
+#endif
 #ifdef PRINT_PRODUCTIONS
                 seq.push_back(pro);
 #endif
@@ -90,18 +99,16 @@ int parse(TokenTable &tokenTable) {
             err = true;
         }
         if(err) {
-            //printf("[DEBUG] Error occured.\n"); ///////////////////////////////////
-            printf(GRAMMA_ERROR_MESSAGE[current()], tokenTable[i].row, tokenTable[i].col, "TODO"); // TODO
+            printf(GRAMMA_ERROR_MESSAGE[current()], entry.row, entry.col, entry.source); // TODO
             // error recovery
             while(!stack->empty() && RECOVER_SYMBOL[current()].empty())
                 pop();
-            //printStack(); ///////////////////////////////////
             if(stack->empty())
                 break;
             int label = -1;
             for(int stat = current(); (unsigned long)i < tokenTable.size(); i++) {
                 for(set<int>::iterator it = RECOVER_SYMBOL[stat].begin(); it != RECOVER_SYMBOL[stat].end(); it++) {
-                    if(FOLLOW[*it].find(tokenTable[i].type) != FOLLOW[*it].end()) {
+                    if(GOTO[GOTO[stat][*it]][tokenTable[i].type] != -1) {
                         label = *it;
                         break;
                     }
@@ -114,7 +121,6 @@ int parse(TokenTable &tokenTable) {
             GrammaSymbol sym = templateGrammaSymbol;
             sym.label = label;
             push(GOTO[current()][label], sym);
-            printf("[DEBUG] Error handling finished.\n");
         }
     }
     if(ACTION[current()][END_SYMBOL] != 'a') {
