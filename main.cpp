@@ -131,8 +131,8 @@ int main(int argc, char **argv) {
         return 0;
     }
     if(mode == NONE_MODE) {
-        printf("No compiling mode selected. Default to lexical.\n");
-        mode = LEXICAL;
+        printf("No compiling mode selected. Default to gramma.\n");
+        mode = GRAMMA;
     }
     FILE *ft = NULL;
     if(targetFile != NULL) {
