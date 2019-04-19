@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
             printf("< %-12s,        >\n", lexicalTypeString[it->type]);
     }
     printf("\nSymbol table:\n");
-    for(unsigned long i = 1; i != symbolTable->size(); i++) {
+    for(unsigned long i = 1; i < symbolTable->size(); i++) {
         if((*symbolTable)[i].isString)
             printf("%-4lu  %s\n", i, (*symbolTable)[i].value.stringValue);
         else if((*symbolTable)[i].value.numberValue.isFloat)
