@@ -1,3 +1,7 @@
+/*
+ * This file is generated automatically by the LR(1) grammar analyser.
+ */
+
 #ifndef __PRODUCTIONS_H__
 #define __PRODUCTIONS_H__
 

@@ -7,6 +7,9 @@ import numpy as np
 START_SYMBOL = 'S'
 END_SYMBOL = '#'
 
+grm_code_file = "grammar.h"
+pro_code_file = "productions.h"
+
 syms = []
 pros = []
 stats = [] # list((pro#, dot_location) -> set(symbol#))
@@ -20,7 +23,7 @@ smap = dict() # symbol -> symbol#
 pmap = dict() # symbol# -> list(pro#)
 imap = dict() # sorted_tuple((pro#, dot_location, sorted_succeeding_symbol_tuple)) -> stat#
 
-code = """/*
+grm_code = """/*
  * This file is generated automatically by the LR(1) grammar analyser.
  * You should solve the conflicts manually by compiling this file and check the compile errors.
  */
@@ -64,11 +67,24 @@ const char *(GRAMMA_ERROR_MESSAGE[]) = {
     %s
 };
 
+#endif
+"""
+
+pro_code = """/*
+ * This file is generated automatically by the LR(1) grammar analyser.
+ */
+
+#ifndef __PRODUCTIONS_H__
+#define __PRODUCTIONS_H__
+
+static const int PRO_N = %d;
+
 const char *(PRO[PRO_N]) = {
     %s
 };
 
 #endif
+
 """
 
 def element(s): # get an arbitrary element from s
@@ -372,27 +388,33 @@ def show_c():
     FOLLOW_CODE = "},\n    set<int> {".join([", ".join([str(sym) for sym in FOLLOW[s]]) for s in range(len(syms))])
     PRO = ",\n    ".join(['"' + p2s(p) + '"' for p in range(len(pros))])
     ERROR_MESSAGE = ",\n    ".join(["\"Line %d, Col %d: Unexpected token: %s\\n\""]*len(stats))
-    info = (len(stats),
-            len(syms),
-            len(pros),
-            termN,
-            startStat,
-            smap[END_SYMBOL],
-            GOTO,
-            ACTION,
-            PRO_LEFT,
-            PRO_LENGTH,
-            RECOVER_SYMBOL,
-            FOLLOW_CODE,
-            ERROR_MESSAGE,
-            PRO)
-    print(code%info)
+    grm_info = (len(stats),
+                len(syms),
+                len(pros),
+                termN,
+                startStat,
+                smap[END_SYMBOL],
+                GOTO,
+                ACTION,
+                PRO_LEFT,
+                PRO_LENGTH,
+                RECOVER_SYMBOL,
+                FOLLOW_CODE,
+                ERROR_MESSAGE)
+    pro_info = (len(pros),
+                PRO)
+    with open(grm_code_file, "w") as f:
+        f.write(grm_code%grm_info)
+    with open(pro_code_file, "w") as f:
+        f.write(pro_code%pro_info)
 
 def main(argv):
     filename = None
     human = False
     cstyle = False
     readId = False
+    readingGrammarFileName = False
+    readingProductionFileName = False
     for arg in argv:
         if arg == '-h':
             human = True
@@ -400,8 +422,19 @@ def main(argv):
             cstyle = True
         elif arg == '-i':
             readId = True
+        elif arg == "-g":
+            readingGrammarFileName = True
+        elif arg == "-p":
+            readingProductionFileName = True
         elif arg[0] != '-':
-            filename = arg
+            if readingGrammarFileName:
+                grm_code_file = arg
+                readingGrammarFileName = False
+            elif readingProductionFileName:
+                pro_code_file = arg
+                readingProductionFileName = False
+            else:
+                filename = arg
     if filename is None:
         print("No input.")
         return
