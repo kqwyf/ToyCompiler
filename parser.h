@@ -8,7 +8,7 @@
 #include "lex.h"
 
 struct GrammaSymbol {
-    int label;
+    int type;
 };
 
 struct AnalyserStackItem {
