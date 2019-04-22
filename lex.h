@@ -45,7 +45,7 @@ enum LexicalType {
     COMMENT
 };
 
-union SymbolValue {
+union LexicalSymbolValue {
     char *stringValue;
     struct {
         bool isFloat;
@@ -56,9 +56,9 @@ union SymbolValue {
     } numberValue;
 };
 
-struct SymbolTableEntry {
+struct LexicalSymbolTableEntry {
     bool isString;
-    SymbolValue value;
+    LexicalSymbolValue value;
 };
 
 struct TokenTableEntry {
@@ -72,8 +72,8 @@ struct TokenTableEntry {
 };
 
 typedef vector<TokenTableEntry> TokenTable;
-typedef vector<SymbolTableEntry> SymbolTable;
+typedef vector<LexicalSymbolTableEntry> LexicalSymbolTable;
 
-int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable);
+int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, LexicalSymbolTable &symbolTable);
 
 #endif

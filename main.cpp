@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
 
     // lexical analysis
     TokenTable *tokenTable = new TokenTable();
-    SymbolTable *symbolTable = new SymbolTable();
+    LexicalSymbolTable *symbolTable = new LexicalSymbolTable();
     int err = lexicalAnalyse(buffer, length, *tokenTable, *symbolTable);
     if(err) putchar('\n');
     printf("Token sequence:\n");

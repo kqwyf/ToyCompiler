@@ -44,7 +44,7 @@ const TokenTableEntry templateTokenEntry = {
     0 // end
 #endif
 };
-const SymbolTableEntry templateSymbolEntry {false, {0}};
+const LexicalSymbolTableEntry templateSymbolEntry {false, {0}};
 
 // lexical analysis context
 map<string, int> identifierMap;
@@ -55,14 +55,14 @@ LexicalError err; // error code when consuming a token.
 int skipped; // the number of skipped characters. set when the consumer functions return.
              // negative when the consumer assumes more characters present.
 
-int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable);
+int consumeIDKW(const char *s, TokenTable &tokenTable, LexicalSymbolTable &symbolTable);
 int consumeOP(const char *s, TokenTable &tokenTable);
 int consumeDL(const char *s, TokenTable &tokenTable);
-int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable);
+int consumeCS(const char *s, TokenTable &tokenTable, LexicalSymbolTable &symbolTable);
 int consumeCM(const char *s, TokenTable &tokenTable);
-void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable);
+void clearTable(TokenTable &tokenTable, LexicalSymbolTable &symbolTable);
 
-int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &symbolTable) {
+int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, LexicalSymbolTable &symbolTable) {
     identifierMap.clear();
     intConstantMap.clear();
     floatConstantMap.clear();
@@ -127,7 +127,7 @@ int lexicalAnalyse(const char *s, int l, TokenTable &tokenTable, SymbolTable &sy
     return errorOccured ? -1 : 0;
 }
 
-void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable) {
+void clearTable(TokenTable &tokenTable, LexicalSymbolTable &symbolTable) {
     for(TokenTable::iterator it = tokenTable.begin(); it != tokenTable.end(); it++) {
         if(it->source)
             delete it->source;
@@ -142,7 +142,7 @@ void clearTable(TokenTable &tokenTable, SymbolTable &symbolTable) {
     symbolTable.clear();
 }
 
-int consumeIDKW(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable) {
+int consumeIDKW(const char *s, TokenTable &tokenTable, LexicalSymbolTable &symbolTable) {
     err = LEXICAL_OK;
     skipped = 0;
     int i;
@@ -276,7 +276,7 @@ int consumeDL(const char *s, TokenTable &tokenTable) {
     return l;
 }
 
-int consumeCS(const char *s, TokenTable &tokenTable, SymbolTable &symbolTable) {
+int consumeCS(const char *s, TokenTable &tokenTable, LexicalSymbolTable &symbolTable) {
     err = LEXICAL_OK;
     skipped = 0;
     int i;
