@@ -6,15 +6,11 @@ using namespace std;
 #include "parser.h"
 #include "grammar.h"
 
-const GrammaSymbol templateGrammaSymbol = {
-    -1 // type
-};
-const AnalyserStackItem templateStackItem = {
-    -1, // stat
-    templateGrammaSymbol // sym
-};
-
+// Parsing context
 AnalyserStack *stack = NULL;
+SymbolTable *symbolTable = NULL;
+InstTable *instTable = NULL;
+LabelTable *labelTable = NULL;
 
 #ifdef DEBUG
 void printStack() {
@@ -26,6 +22,8 @@ void printStack() {
     putchar('\n');
 }
 #endif
+
+
 
 void push(int stat, GrammaSymbol sym);
 void pop();
@@ -39,8 +37,7 @@ int parse(TokenTable &tokenTable, ProductionSequence &seq) {
 int parse(TokenTable &tokenTable) {
 #endif
     stack = new AnalyserStack();
-    GrammaSymbol endSymbol = templateGrammaSymbol;
-    endSymbol.type = END_SYMBOL;
+    GrammaSymbol endSymbol = GrammaSymbol(/*code=*/-1, /*end=*/-1, /*type=*/END_SYMBOL);
     push(INIT_STATE, endSymbol);
     int i = 0;
     while((unsigned long)i <= tokenTable.size() && !stack->empty()) {
@@ -68,8 +65,7 @@ int parse(TokenTable &tokenTable) {
             if(stat < 0) {
                 return -1; // control should never reach here
             } else {
-                GrammaSymbol sym = templateGrammaSymbol;
-                sym.type = type;
+                GrammaSymbol sym = GrammaSymbol(-1, -1, type);
                 push(stat, sym);
                 i++;
 #ifdef DEBUG
@@ -82,8 +78,7 @@ int parse(TokenTable &tokenTable) {
                 return -1; // control should never reach here
             } else {
                 pop(PRO_LENGTH[pro]);
-                GrammaSymbol sym = templateGrammaSymbol;
-                sym.type = PRO_LEFT[pro];
+                GrammaSymbol sym = GrammaSymbol(-1, -1, PRO_LEFT[pro]);
                 int stat = GOTO[current()][sym.type];
                 push(stat, sym);
 #ifdef DEBUG
@@ -118,8 +113,7 @@ int parse(TokenTable &tokenTable) {
             }
             if(symType == -1)
                 break;
-            GrammaSymbol sym = templateGrammaSymbol;
-            sym.type = symType;
+            GrammaSymbol sym = GrammaSymbol(-1, -1, symType);
             push(GOTO[current()][symType], sym);
         }
     }
@@ -132,9 +126,7 @@ int parse(TokenTable &tokenTable) {
 }
 
 void push(int stat, GrammaSymbol sym) {
-    stack->push_back(templateStackItem);
-    stack->back().stat = stat;
-    stack->back().sym = sym;
+    stack->push_back(AnalyserStackItem(stat, sym));
 }
 
 void pop() {
@@ -154,3 +146,11 @@ int top() {
     return stack->back().sym.type;
 }
 
+GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
+                                                          end(end),
+                                                          type(type) {
+    if(type == EXPRESSION)
+        this->attr.exp = new ExpInfo();
+}
+
+AnalyserStackItem::AnalyserStackItem(int stat, GrammaSymbol sym) : stat(stat), sym(sym) {}

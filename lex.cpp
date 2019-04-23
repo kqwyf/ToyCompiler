@@ -26,12 +26,12 @@ const char BLANK_CHAR[] = " \n\t";
 // one-to-one correspondent non-datatype keywords and their codes
 const int NON_DATATYPE_KEYWORDS_NUM = 4;
 const char *(NON_DATATYPE_KEYWORDS[NON_DATATYPE_KEYWORDS_NUM]) = {"if", "else", "do", "while"};
-const LexicalType NON_DATATYPE_KEYWORD_CODES[NON_DATATYPE_KEYWORDS_NUM] = {IF, ELSE, DO, WHILE};
+const SymbolType NON_DATATYPE_KEYWORD_CODES[NON_DATATYPE_KEYWORDS_NUM] = {IF, ELSE, DO, WHILE};
 
 // one-to-one correspondent datatype keywords and their codes
 const int DATATYPE_KEYWORDS_NUM = 4;
 const char *(DATATYPE_KEYWORDS[DATATYPE_KEYWORDS_NUM]) = {"int", "float", "bool", "struct"};
-const LexicalType DATATYPE_KEYWORD_CODES[DATATYPE_KEYWORDS_NUM] = {INT, FLOAT, BOOL, STRUCT};
+const SymbolType DATATYPE_KEYWORD_CODES[DATATYPE_KEYWORDS_NUM] = {INT, FLOAT, BOOL, STRUCT};
 
 const TokenTableEntry templateTokenEntry = {
     NONE, // type
@@ -192,7 +192,7 @@ int consumeIDKW(const char *s, TokenTable &tokenTable, LexicalSymbolTable &symbo
 int consumeOP(const char *s, TokenTable &tokenTable) {
     err = LEXICAL_OK;
     skipped = 0;
-    LexicalType type;
+    SymbolType type;
     int l = 1;
     if(s[0] == '+')
         type = PLUS;
@@ -245,7 +245,7 @@ int consumeOP(const char *s, TokenTable &tokenTable) {
 int consumeDL(const char *s, TokenTable &tokenTable) {
     err = LEXICAL_OK;
     skipped = 0;
-    LexicalType type;
+    SymbolType type;
     int l = 1;
     if(s[0] == '=')
         type = ASSIGN;
