@@ -1,10 +1,10 @@
 BUILD_PATH = ./build
 
 all: $(BUILD_PATH)
-	g++ -O2 main.cpp lex.cpp parser.cpp -o $(BUILD_PATH)/main
+	g++ -O2 main.cpp lex.cpp parser.cpp grammar.cpp -o $(BUILD_PATH)/main
 
 debug: $(BUILD_PATH)
-	g++ -O2 -DDEBUG main.cpp lex.cpp parser.cpp -o $(BUILD_PATH)/main
+	g++ -O2 -DDEBUG main.cpp lex.cpp parser.cpp grammar.cpp -o $(BUILD_PATH)/main
 
 $(BUILD_PATH):
 	mkdir $(BUILD_PATH)

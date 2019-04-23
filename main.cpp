@@ -3,7 +3,7 @@
 
 #include "lex.h"
 #include "parser.h"
-#include "productions.h"
+#include "grammar.h"
 
 const char *usage = 
 "Usage:\n\

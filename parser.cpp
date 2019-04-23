@@ -24,8 +24,6 @@ void printStack() {
 }
 #endif
 
-
-
 void push(int stat, GrammaSymbol sym);
 void pop();
 void pop(int n);
@@ -81,8 +79,9 @@ int parse(TokenTable &tokenTable) {
             if(pro < 0) {
                 return -1; // control should never reach here
             } else {
-                pop(PRO_LENGTH[pro]);
                 GrammaSymbol sym = GrammaSymbol(-1, -1, PRO_LEFT[pro]);
+                semanticActions[pro](*stack, sym, PRO_LENGTH[pro]);
+                pop(PRO_LENGTH[pro]);
                 int stat = GOTO[current()][sym.type];
                 push(stat, sym);
 #ifdef DEBUG
@@ -260,4 +259,324 @@ int LabelTable::newLabel(int index) {
     this->push_back(index);
     return result;
 }
+
+/*****************************
+ * Semantic Action Functions *
+ *****************************/
+
+// PROGRAM -> DELARE_S
+void SA_0(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_1(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_2(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_3(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_4(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_5(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_6(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_7(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_8(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_9(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_10(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_11(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_12(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_13(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_14(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_15(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_16(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_17(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_18(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_19(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_20(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_21(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_22(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_23(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_24(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_25(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_26(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_27(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_28(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_29(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_30(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_31(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_32(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_33(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_34(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_35(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_36(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_37(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_38(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_39(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_40(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_41(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_42(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_43(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_44(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_45(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_46(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_47(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_48(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_49(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_50(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_51(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_52(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_53(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_54(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_55(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_56(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_57(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_58(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_59(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_60(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_61(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_62(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_63(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_64(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_65(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_66(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_67(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_68(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_69(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_70(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_71(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_72(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_73(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_74(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_75(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_76(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void SA_77(AnalyserStack &stack, GrammaSymbol &sym, int proLen) {
+}
+
+void (*(semanticActions[PRO_N]))(AnalyserStack &stack, GrammaSymbol &sym, int proLen) = {
+    SA_0,
+    SA_1,
+    SA_2,
+    SA_3,
+    SA_4,
+    SA_5,
+    SA_6,
+    SA_7,
+    SA_8,
+    SA_9,
+    SA_10,
+    SA_11,
+    SA_12,
+    SA_13,
+    SA_14,
+    SA_15,
+    SA_16,
+    SA_17,
+    SA_18,
+    SA_19,
+    SA_20,
+    SA_21,
+    SA_22,
+    SA_23,
+    SA_24,
+    SA_25,
+    SA_26,
+    SA_27,
+    SA_28,
+    SA_29,
+    SA_30,
+    SA_31,
+    SA_32,
+    SA_33,
+    SA_34,
+    SA_35,
+    SA_36,
+    SA_37,
+    SA_38,
+    SA_39,
+    SA_40,
+    SA_41,
+    SA_42,
+    SA_43,
+    SA_44,
+    SA_45,
+    SA_46,
+    SA_47,
+    SA_48,
+    SA_49,
+    SA_50,
+    SA_51,
+    SA_52,
+    SA_53,
+    SA_54,
+    SA_55,
+    SA_56,
+    SA_57,
+    SA_58,
+    SA_59,
+    SA_60,
+    SA_61,
+    SA_62,
+    SA_63,
+    SA_64,
+    SA_65,
+    SA_66,
+    SA_67,
+    SA_68,
+    SA_69,
+    SA_70,
+    SA_71,
+    SA_72,
+    SA_73,
+    SA_74,
+    SA_75,
+    SA_76,
+    SA_77,
+};
 
