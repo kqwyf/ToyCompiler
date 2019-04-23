@@ -7,8 +7,7 @@ import numpy as np
 START_SYMBOL = 'S'
 END_SYMBOL = '#'
 
-grm_code_file = "grammar.h"
-pro_code_file = "productions.h"
+grm_code_file = "grammar"
 
 syms = []
 pros = []
@@ -23,24 +22,48 @@ smap = dict() # symbol -> symbol#
 pmap = dict() # symbol# -> list(pro#)
 imap = dict() # sorted_tuple((pro#, dot_location, sorted_succeeding_symbol_tuple)) -> stat#
 
+grm_h = """/*
+ * This file is generated automatically by the LR(1) grammar analyser.
+ */
+
+#ifndef __%s_H__
+#define __%s_H__
+
+#include <set>
+
+#include "parser.h"
+
+using namespace std;
+
+const int STATE_N = %d;
+const int SYMBOL_N = %d;
+const int PRO_N = %d;
+const int TERMINAL_N = %d;
+
+const int INIT_STATE = %d;
+const int END_SYMBOL = %d;
+
+extern const int GOTO[STATE_N][SYMBOL_N];
+extern const char ACTION[STATE_N][TERMINAL_N];
+extern const int PRO_LEFT[PRO_N];
+extern const int PRO_LENGTH[PRO_N];
+extern const set<int> RECOVER_SYMBOL[STATE_N];
+extern const set<int> FOLLOW[SYMBOL_N];
+extern const char *(PRO[PRO_N]);
+extern const char *(GRAMMA_ERROR_MESSAGE[STATE_N]);
+
+extern void (*(semanticActions[PRO_N]))(AnalyserStack &stack, GrammaSymbol &sym, int proLen);
+inline bool isTerminal(int label);
+
+#endif
+ """
+
 grm_code = """/*
  * This file is generated automatically by the LR(1) grammar analyser.
  * You should solve the conflicts manually by compiling this file and check the compile errors.
  */
-#ifndef __GRAMMAR_H__
-#define __GRAMMAR_H__
 
-#include <set>
-
-using namespace std;
-
-static const int STATE_N = %d;
-static const int SYMBOL_N = %d;
-static const int PRO_N = %d;
-static const int TERMINAL_N = %d;
-
-const int INIT_STATE = %d;
-const int END_SYMBOL = %d;
+#include "%s.h"
 
 const int GOTO[STATE_N][SYMBOL_N] = {
     {%s}
@@ -63,28 +86,13 @@ inline bool isTerminal(int label) {
     return label < TERMINAL_N;
 }
 
-const char *(GRAMMA_ERROR_MESSAGE[]) = {
-    %s
-};
-
-#endif
-"""
-
-pro_code = """/*
- * This file is generated automatically by the LR(1) grammar analyser.
- */
-
-#ifndef __PRODUCTIONS_H__
-#define __PRODUCTIONS_H__
-
-static const int PRO_N = %d;
-
 const char *(PRO[PRO_N]) = {
     %s
 };
 
-#endif
-
+const char *(GRAMMA_ERROR_MESSAGE[STATE_N]) = {
+    %s
+};
 """
 
 def element(s): # get an arbitrary element from s
@@ -388,25 +396,27 @@ def show_c():
     FOLLOW_CODE = "},\n    set<int> {".join([", ".join([str(sym) for sym in FOLLOW[s]]) for s in range(len(syms))])
     PRO = ",\n    ".join(['"' + p2s(p) + '"' for p in range(len(pros))])
     ERROR_MESSAGE = ",\n    ".join(["\"Line %d, Col %d: Unexpected token: %s\\n\""]*len(stats))
-    grm_info = (len(stats),
-                len(syms),
-                len(pros),
-                termN,
-                startStat,
-                smap[END_SYMBOL],
+    grm_h_info = (grm_code_file.upper(),
+                  grm_code_file.upper(),
+                  len(stats),
+                  len(syms),
+                  len(pros),
+                  termN,
+                  startStat,
+                  smap[END_SYMBOL])
+    grm_info = (grm_code_file,
                 GOTO,
                 ACTION,
                 PRO_LEFT,
                 PRO_LENGTH,
                 RECOVER_SYMBOL,
                 FOLLOW_CODE,
+                PRO,
                 ERROR_MESSAGE)
-    pro_info = (len(pros),
-                PRO)
-    with open(grm_code_file, "w") as f:
+    with open(grm_code_file + ".h", "w") as f:
+        f.write(grm_h%grm_h_info)
+    with open(grm_code_file + ".cpp", "w") as f:
         f.write(grm_code%grm_info)
-    with open(pro_code_file, "w") as f:
-        f.write(pro_code%pro_info)
 
 def main(argv):
     filename = None
@@ -414,7 +424,6 @@ def main(argv):
     cstyle = False
     readId = False
     readingGrammarFileName = False
-    readingProductionFileName = False
     for arg in argv:
         if arg == '-h':
             human = True
@@ -424,15 +433,10 @@ def main(argv):
             readId = True
         elif arg == "-g":
             readingGrammarFileName = True
-        elif arg == "-p":
-            readingProductionFileName = True
         elif arg[0] != '-':
             if readingGrammarFileName:
                 grm_code_file = arg
                 readingGrammarFileName = False
-            elif readingProductionFileName:
-                pro_code_file = arg
-                readingProductionFileName = False
             else:
                 filename = arg
     if filename is None:
