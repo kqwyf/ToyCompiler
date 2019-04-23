@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 
 using namespace std;
 
@@ -15,11 +16,11 @@ LabelTable *labelTable = NULL;
 #ifdef DEBUG
 void printStack() {
     for(int i = 0; (unsigned long)i < stack->size(); i++)
-        printf("%-3d|", (*stack)[i].stat);
-    putchar('\n');
+        fprintf(stderr, "%-3d|", (*stack)[i].stat);
+    fputchar(stderr, '\n');
     for(int i = 0; (unsigned long)i < stack->size(); i++)
-        printf("%-3d|", (*stack)[i].sym.type);
-    putchar('\n');
+        fprintf(stderr, "%-3d|", (*stack)[i].sym.type);
+    fputchar(stderr, '\n');
 }
 #endif
 
@@ -43,7 +44,7 @@ int parse(TokenTable &tokenTable) {
     while((unsigned long)i <= tokenTable.size() && !stack->empty()) {
 #ifdef DEBUG
         printStack();
-        putchar('\n');
+        fputchar(stderr, '\n');
 #endif
         TokenTableEntry entry; 
         int type = NONE; // when it reaches the end of the token table, there is always an end symbol
@@ -58,18 +59,21 @@ int parse(TokenTable &tokenTable) {
         bool err = false;
         char action = ACTION[current()][type];
 #ifdef DEBUG
-        printf("[DEBUG] Action: %c\n", action == '\0' ? '0' : action);
+        fprintf(stderr, "[DEBUG] Action: %c\n", action == '\0' ? '0' : action);
 #endif
         if(action == 's') {
             int stat = GOTO[current()][type];
             if(stat < 0) {
+#ifdef DEBUG
+                fprintf(stderr, "[ERROR] Action is 's' but goto is -1.\n");
+#endif
                 return -1; // control should never reach here
             } else {
                 GrammaSymbol sym = GrammaSymbol(-1, -1, type);
                 push(stat, sym);
                 i++;
 #ifdef DEBUG
-                printf("[DEBUG] Shift symbol: %d\n", type);
+                fprintf(stderr, "[DEBUG] Shift symbol: %d\n", type);
 #endif
             }
         } else if(action == 'r') {
@@ -82,7 +86,7 @@ int parse(TokenTable &tokenTable) {
                 int stat = GOTO[current()][sym.type];
                 push(stat, sym);
 #ifdef DEBUG
-                printf("[DEBUG] Reduce: %d\n", pro);
+                fprintf(stderr, "[DEBUG] Reduce: %d\n", pro);
 #endif
 #ifdef PRINT_PRODUCTIONS
                 seq.push_back(pro);
@@ -94,7 +98,7 @@ int parse(TokenTable &tokenTable) {
             err = true;
         }
         if(err) {
-            printf(GRAMMA_ERROR_MESSAGE[current()], entry.row, entry.col, entry.source); // TODO
+            printf(GRAMMA_ERROR_MESSAGE[current()], entry.row, entry.col, entry.source);
             // error recovery
             while(!stack->empty() && RECOVER_SYMBOL[current()].empty())
                 pop();
@@ -149,8 +153,111 @@ int top() {
 GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
                                                           end(end),
                                                           type(type) {
-    if(type == EXPRESSION)
+    if(type == EXPRESSION || (EXPRESSION1 <= type && type <= EXPRESSION8))
         this->attr.exp = new ExpInfo();
+    else if(type == EXPRESSION_S)
+        this->attr.exps = new ExpsInfo();
+    else if(type == IDENTIFIER_S)
+        this->attr.ids = new IdsInfo();
+    else if(type == SELECT_BEGIN)
+        this->attr.sel_b = new SelBeginInfo();
+    else if(type == LOOP_BEGIN)
+        this->attr.loop_b = new LoopBeginInfo();
+    else if(type == TYPE_ARRAY)
+        this->attr.arr = new ArrayInfo();
+    else if(type == CONSTANT)
+        this->attr.con = new ConstInfo();
 }
 
 AnalyserStackItem::AnalyserStackItem(int stat, GrammaSymbol sym) : stat(stat), sym(sym) {}
+
+SymbolTable::SymbolTable(SymbolTable *parent) : tempCount(0),
+                                                parent(parent) {
+    // this->tempTable = new TempSymbolTable(this); // TODO: check if temp table is necessary
+}
+
+SymbolTableEntryRef SymbolTable::newSymbol(const char *name, int type, SymbolDataType dataType, int size) {
+    int nameLen = strlen(name);
+    SymbolTableEntry entry;
+    entry.name.strValue = new char[nameLen + 1];
+    strcpy(entry.name.strValue, name);
+    entry.type = type;
+    entry.dataType = dataType;
+    entry.offset = this->offset;
+    this->offset += size;
+    int index = this->size();
+    this->push_back(entry);
+    return (SymbolTableEntryRef){this, index};
+}
+
+SymbolTableEntryRef SymbolTable::newSymbol(int value, int type) {
+    SymbolTableEntry entry;
+    entry.name.intValue = value;
+    entry.type = type;
+    entry.dataType = DT_INT;
+    entry.offset = this->offset;
+    this->offset += INT_SIZE;
+    int index = this->size();
+    this->push_back(entry);
+    return (SymbolTableEntryRef){this, index};
+}
+
+SymbolTableEntryRef SymbolTable::newSymbol(double value, int type) {
+    SymbolTableEntry entry;
+    entry.name.floatValue = value;
+    entry.type = type;
+    entry.dataType = DT_FLOAT;
+    entry.offset = this->offset;
+    this->offset += FLOAT_SIZE;
+    int index = this->size();
+    this->push_back(entry);
+    return (SymbolTableEntryRef){this, index};
+}
+
+SymbolTableEntryRef SymbolTable::newTemp(SymbolTableEntry &entry, int size) {
+    int oldOffset = entry.offset;
+    this->tempCount++;
+    entry.offset = this->offset;
+    this->offset += size;
+    int index = this->size();
+    this->push_back(entry);
+    entry.offset = oldOffset;
+    return (SymbolTableEntryRef){this, index};
+}
+
+void SymbolTable::freeTemp() {
+    if(this->tempCount <= 0) {
+#ifdef DEBUG
+        fprintf(stderr, "[ERROR] Can't free temp symbol.\n"); // control should never reach here
+#endif
+        return;
+    }
+    this->tempCount--;
+    this->pop_back();
+}
+
+int InstTable::gen(OpCode op, const SymbolTableEntryRef &arg1, const SymbolTableEntryRef &arg2, const SymbolTableEntryRef &result) {
+    Inst inst;
+    inst.index = this->size();
+    inst.label = -1;
+    inst.op = op;
+    inst.arg1 = arg1;
+    inst.arg2 = arg2;
+    inst.result = result;
+    this->push_back(inst);
+    return inst.index;
+}
+
+void InstTable::backPatch(list<int> &l, int label) {
+    for(list<int>::iterator it = l.begin(); it != l.end(); it++) {
+        (*this)[*it].result.table = NULL;
+        (*this)[*it].result.index = label;
+    }
+}
+
+int LabelTable::newLabel(int index) {
+    int result = this->size();
+    this->push_back(index);
+    return result;
+}
+

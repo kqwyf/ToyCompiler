@@ -10,9 +10,20 @@
 #include "symbol.h"
 #include "opcode.h"
 
-const int BLOCK = -1;
-const int ARRAY = -2;
+enum SymbolDataType {
+    DT_NONE = 0,
+    DT_BLOCK,
+    DT_ARRAY,
+    DT_INT,
+    DT_FLOAT,
+    DT_BOOL,
+    DT_STRUCT,
+    DT_STRUCT_DEF
+};
 
+const int INT_SIZE = 4;
+const int FLOAT_SIZE = 8;
+const int BOOL_SIZE = 1;
 
 struct Inst;
 class InstTable;
@@ -45,7 +56,7 @@ union ExternalAttribute {
     SelBeginInfo *sel_b; // SELECT_BEGIN
     LoopBeginInfo *loop_b; // LOOP_BEGIN
     ArrayInfo *arr; // TYPE_ARRAY
-    ConstInfo *con;
+    ConstInfo *con; // CONSTANT
 };
 
 class GrammaSymbol {
@@ -107,20 +118,25 @@ struct SymbolTableEntry {
         int intValue;
         double floatValue;
     } name;
-    int type;
+    int type; // symbol type
+    SymbolDataType dataType; // data type
     int offset;
-    SymbolTable *attr;
+    union {
+        SymbolTable *table;
+        ArrayInfo *arr;
+    } attr;
 };
 
 class SymbolTable : public vector<SymbolTableEntry> {
     public:
         SymbolTable(SymbolTable *parent);
-        SymbolTableEntryRef newSymbol(const char *name, int type, int offset, SymbolTable *newTable);
-        SymbolTableEntryRef newSymbol(int value, int type, int offset);
-        SymbolTableEntryRef newSymbol(double value, int type, int offset);
-        SymbolTableEntryRef newTemp();
+        SymbolTableEntryRef newSymbol(const char *name, int type, SymbolDataType dataType, int size);
+        SymbolTableEntryRef newSymbol(int value, int type);
+        SymbolTableEntryRef newSymbol(double value, int type);
+        SymbolTableEntryRef newTemp(SymbolTableEntry &entry, int size);
         void freeTemp();
         int tempCount;
+        int offset;
         SymbolTable *parent;
         TempSymbolTable *tempTable;
 };
@@ -134,6 +150,10 @@ struct TempSymbolTable : public vector<int> {
 struct Inst {
     int index; // index in the instruction pool
     int label; // if there is a label before this instruction. positive for label#, -1 for none
+    OpCode op;
+    SymbolTableEntryRef arg1;
+    SymbolTableEntryRef arg2;
+    SymbolTableEntryRef result;
 };
 
 class InstTable : public vector<Inst> {
