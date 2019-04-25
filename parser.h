@@ -150,6 +150,7 @@ struct TempSymbolTable : public vector<int> {
 struct Inst {
     int index; // index in the instruction pool
     int label; // if there is a label before this instruction. positive for label#, -1 for none
+    int next; // index of the logically next instruction, -1 for none
     OpCode op;
     SymbolTableEntryRef arg1;
     SymbolTableEntryRef arg2;
