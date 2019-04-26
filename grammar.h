@@ -11,9 +11,9 @@
 
 using namespace std;
 
-const int STATE_N = 319;
-const int SYMBOL_N = 70;
-const int PRO_N = 76;
+const int STATE_N = 294;
+const int SYMBOL_N = 71;
+const int PRO_N = 79;
 const int TERMINAL_N = 35;
 
 const int INIT_STATE = 0;
@@ -28,7 +28,7 @@ extern const set<int> FOLLOW[SYMBOL_N];
 extern const char *(PRO[PRO_N]);
 extern const char *(GRAMMA_ERROR_MESSAGE[STATE_N]);
 
-extern void (*(semanticActions[PRO_N]))(GrammaSymbol &sym);
+extern int (*(semanticActions[PRO_N]))(GrammaSymbol &sym);
 inline bool isTerminal(int label);
 
 #endif

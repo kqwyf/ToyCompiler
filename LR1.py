@@ -52,7 +52,7 @@ extern const set<int> FOLLOW[SYMBOL_N];
 extern const char *(PRO[PRO_N]);
 extern const char *(GRAMMA_ERROR_MESSAGE[STATE_N]);
 
-extern void (*(semanticActions[PRO_N]))(GrammaSymbol &sym);
+extern int (*(semanticActions[PRO_N]))(GrammaSymbol &sym);
 inline bool isTerminal(int label);
 
 #endif

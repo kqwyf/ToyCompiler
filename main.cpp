@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
     // gramma analysis
 #ifdef PRINT_PRODUCTIONS
     ProductionSequence *productionSequence = new ProductionSequence();
-    err = parse(*tokenTable, *productionSequence);
+    err = parse(*tokenTable, symbolTable, *productionSequence);
     if(err) putchar('\n');
     printf("\nProduction sequence:\n");
     for(ProductionSequence::iterator it = productionSequence->begin(); it != productionSequence->end(); it++)

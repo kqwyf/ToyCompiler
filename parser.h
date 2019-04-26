@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <list>
+#include <map>
 
 #include "lex.h"
 #include "symbol.h"
@@ -37,10 +38,14 @@ struct SymbolTableEntryRef;
 struct ExpInfo;
 struct ExpsInfo;
 struct IdsInfo;
+struct IdInfo;
 struct SelBeginInfo;
 struct LoopBeginInfo;
+struct FuncInfo;
 struct ArrayInfo;
 struct ConstInfo;
+struct TypeInfo;
+struct TypeStructInfo;
 
 // point to a specific entry in a specific symbol table
 struct SymbolTableEntryRef {
@@ -53,10 +58,13 @@ union ExternalAttribute {
     ExpInfo *exp; // EXPRESSION
     ExpsInfo *exps; // EXPRESSION_S
     IdsInfo *ids; // IDENTIFIER_S
+    IdInfo *id; // IDENTIFIER
     SelBeginInfo *sel_b; // SELECT_BEGIN
     LoopBeginInfo *loop_b; // LOOP_BEGIN
-    ArrayInfo *arr; // TYPE_ARRAY
     ConstInfo *con; // CONSTANT
+    TypeInfo *typ; // TYPE, TYPE_BASIC, TYPE_ARRAY, TYPE_STRUCT
+    TypeStructInfo *typ_str; // TYPE_STRUCT
+    int pCount; // PARAMETERS, DECLARE_FUNC_MID
 };
 
 class GrammaSymbol {
@@ -81,8 +89,12 @@ struct ExpsInfo {
     list<int> nextList;
 };
 
+struct IdInfo {
+    int nameIndex;
+};
+
 struct IdsInfo {
-    list<SymbolTableEntryRef> refList;
+    list<int> nameIndexList;
 };
 
 struct SelBeginInfo {
@@ -95,14 +107,32 @@ struct LoopBeginInfo {
     list<int> falseList;
 };
 
+struct FuncInfo {
+    int pCount; // parameter count
+    SymbolTable *table;
+};
+
 struct ArrayInfo {
-    int type; // value in {INT, FLOAT, BOOL}
+    SymbolDataType dataType; // value in {DT_INT, DT_FLOAT, DT_BOOL}
     int ndim; // number of dimensions of this array
     list<int> sizes; // size of each dimension
 };
 
 struct ConstInfo {
-    int type; // value in {INT, FLOAT}
+    SymbolDataType dataType; // value in {DT_INT, DT_FLOAT}
+    int nameIndex;
+};
+
+struct TypeInfo {
+    SymbolDataType dataType;
+    union {
+        SymbolTable *table;
+        ArrayInfo *arr;
+    } attr;
+};
+
+struct TypeStructInfo {
+    int nameIndex;
 };
 
 class AnalyserStackItem {
@@ -124,6 +154,7 @@ struct SymbolTableEntry {
     union {
         SymbolTable *table;
         ArrayInfo *arr;
+        FuncInfo *func;
     } attr;
 };
 
@@ -131,14 +162,22 @@ class SymbolTable : public vector<SymbolTableEntry> {
     public:
         SymbolTable(SymbolTable *parent);
         SymbolTableEntryRef newSymbol(const char *name, int type, SymbolDataType dataType, int size);
-        SymbolTableEntryRef newSymbol(int value, int type);
-        SymbolTableEntryRef newSymbol(double value, int type);
+        SymbolTableEntryRef newSymbol(int value);
+        SymbolTableEntryRef newSymbol(double value);
         SymbolTableEntryRef newTemp(SymbolTableEntry &entry, int size);
         void freeTemp();
+        SymbolTableEntryRef findSymbol(const char *name);
+        SymbolTableEntryRef findSymbol(int value);
+        SymbolTableEntryRef findSymbol(double value);
         int tempCount;
         int offset;
+        bool busy;
         SymbolTable *parent;
         TempSymbolTable *tempTable;
+        map<string, int> stringMap;
+        static SymbolTable *global;
+        static map<int, int> intMap;
+        static map<double, int> floatMap;
 };
 
 struct TempSymbolTable : public vector<int> {
@@ -174,9 +213,9 @@ typedef vector<AnalyserStackItem> AnalyserStack;
 typedef vector<int> ProductionSequence;
 
 #ifdef PRINT_PRODUCTIONS
-int parse(TokenTable &tokenTable, ProductionSequence &seq);
+int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, ProductionSequence &seq);
 #else
-int parse(TokenTable &tokenTable);
+int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable);
 #endif
 
 #endif

@@ -1,0 +1,136 @@
+
+
+
+PROGRAM.code = DECLARE_S.code;
+PROGRAM.code = 无
+
+
+if(STATEMENT_S1.nextlist != NULL) {STATEMENT.label = newlabel(STATEMENT.code); backpatch(STATEMENT_S1.nextlist, STATEMENT.label);} if(STATEMENT.code != NULL) STATEMENT_S1 | STATEMENT;
+STATEMENT_S.code = STATEMENT_S.end = STATEMENT.code;
+
+STATEMENT.nextlist = SELECT.nextlist;
+STATEMENT.nextlist = LOOP.nextlist;
+
+quittable(); STATEMENT.code = STATEMENT_S.code;
+newtable();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+quittable(); STATEMENT.label = newlabel(); backpatch(SELECT_BEGIN.attr.sel_b.truelist, STATEMENT.label); SELECT.nextlist = merge(SELECT_BEGIN.falselist, STATEMENT.nextlist); SELECT.code = SELECT_BEGIN.code | STATEMENT.code;
+quittable(); STATEMENT1.label = newlabel(); backpatch(SELECT_BEGIN.attr.sel_b.truelist, STATEMENT1.label); STATEMENT2.label = newlabel(); backpatch(SELECT_BEGIN.falselist, STATEMENT2.label); SELECT.code = SELECT_BEGIN.code | STATEMENT1.code | tmp = gen(J, 0, 0, 0) | STATEMENT2.code; SELECT.nextlist = merge(STATEMENT1.nextlist, [tmp], STATEMENT2.nextlist);
+newtable(); SELECT_BEGIN.attr.sel_b.truelist = EXPRESSION.truelist; SELECT_BEGIN.attr.sel_b.falselist = EXPRESSION.falselist; SELECT_BEGIN.code = EXPRESSION.code;
+quittable(); newtable();
+
+
+quittable(); STATEMENT.label = newlabel(); LOOP_BEGIN.label = newlabel(); backpatch(LOOP_BEGIN.truelist, STATEMENT.label); LOOP.nextlist = LOOP_BEGIN.falselist; backpatch(STATEMENT.nextlist, LOOP_BEGIN.label); LOOP.code = LOOP_BEGIN.code | STATEMENT | gen(J, 0, 0, LOOP_BEGIN.label);
+newtable(); LOOP_BEGIN.attr.loop_b.truelist = EXPRESSION.truelist; LOOP_BEGIN.attr.loop_b.falselist = EXPRESSION.falselist; LOOP_BEGIN.code = EXPRESSION.code;
+
+
+
+EXPRESSION.index = identifier.symbolIndex; EXPRESSION.type = identifier.type; EXPRESSION.attr.exp.isTemp = false; if(identifier.type == ARRAY) {EXPRESSION.attr.exp.offset = 0; EXPRESSION.attr.exp.ndim = 0;}
+EXPRESSION.index = constant.symbolIndex; EXPRESSION.type = constant.type; EXPRESSION.attr.exp.isTemp = false;
+EXPRESSION = EXPRESSION1
+
+
+
+EXPRESSION.attr.exp.ndim = EXPRESSION1.attr.exp.ndim + 1; EXPRESSION.attr.exp.isTemp = true; if()freetemp(); if()freetemp(); EXPRESSION.index = newtemp(); EXPRESSION.code = EXPRESSION1.code | EXPRESSION2.code | gen(*, EXPRESSION1.index, EXPRESSION1.attr.exp.arr[EXPRESSION.attr.exp.ndim], EXPRESSION.index) | gen(+, EXPRESSION.index, EXPRESSION2.index, EXPRESSION.index); if(EXPRESSION.attr.exp.ndim == symbol[EXPRESSION.index].attr.arr.ndim) EXPRESSION.type = symbol[EXPRESSION.index].type; else EXPRESSION.type = EXPRESSION1.type;
+
+EXPRESSION.isTemp = true; if()freetemp(); if()freetemp(); EXPRESSION.index = newtemp(); EXPRESSION.code = EXPRESSION1.code | EXPRESSION2.code | gen(op, EXPRESSION1.index, EXPRESSION2.index, EXPRESSION.index) | EXPRESSION.truelist = [gen(JNZ, EXPRESSION.index, 0, 0)] | EXPRESSION.falselist = [gen(J, 0, 0, 0)]
+if()freetemp(); if()freetemp(); EXPRESSION2.label = newlabel(); EXPRESSION.isTemp = false; EXPRESSION.falselist = merge(EXPRESSION1.falselist, EXPRESSION2.falselist); EXPRESSION.truelist = EXPRESSION2.truelist; backpatch(EXPRESSION1.truelist, EXPRESSION2.label); EXPRESSION.code = EXPRESSION1.code | EXPRESSION2.code;
+
+(注意区分EXPRESSION是数值型或布尔型)
+EXPRESSION_S1.attr.exps.list.push_back(EXPRESSION.index); EXPRESSION_S.attr.exps.list = EXPRESSION_S1.attr.exps.list;
+EXPRESSION_S.attr.exps.list = new; EXPRESSION_S.attr.exps.list.push_back(EXPRESSION.index);
+
+
+IDENTIFIER_S1.attr.ids.list.push_back(identifier.symbolIndex); IDENTIFIER_S.atr.ids.list = IDENTIFIER_S1.attr.ids.list;
+IDENTIFIER_S.attr.ids.list = new; IDENTIFIER_S.attr.ids.list.push_back(identifier.symbolIndex);
+
+
+OPERATOR_ARITH.type = PLUS;
+OPERATOR_ARITH.type = MINUS;
+OPERATOR_ARITH.type = MULTIPLY;
+OPERATOR_ARITH.type = DIVIDE;
+
+
+OPERATOR_REL.type = EQUAL;
+OPERATOR_REL.type = NOTEQUAL;
+OPERATOR_REL.type = GREATER;
+OPERATOR_REL.type = GREATEREQUAL;
+OPERATOR_REL.type = LESS;
+OPERATOR_REL.type = LESSEQUAL;
+
+
+|表示连接两个符号对应的两段指令链表，连接结果无需返回，因为其自动成为第一个符号的指令链表。
+维护一vector<Inst> insts作为指令表。维护一标号表。
+
+符号表内容：标识符名称/结构体名称/常数值name | 符号类型type | 偏移offset | 详细信息指针attr
+符号表中包括标识符（包括基本类型、数组型、结构体型、结构体定义、语句块、匿名标识符）、常数（两种数值类型）。
+结构体定义时offset值记录其长度，详细信息指针指向其独立符号表。
+语句块（包括选择、循环及其它匿名花括号语句块）不命名（name=NULL），type=IDENTIFIER，datatype=DT_BLOCK，offset无意义，size=0（不改变原符号表offset），attr指向其独立符号表。
+函数name=函数名，type=IDENTIFIER，datatype=DT_BLOCK，offset为其首指令label，size=0，attr信息包含其参数个数及独立符号表。函数返回值符号位于函数符号表首项，作为匿名标识符处理。函数参数依定义序位于符号表第1项及其后。
+
+指令属性：
+index：该指令在指令池中的下标。该属性无需赋值自动获得。
+label：该指令前是否有标号（label），若-1则为无，否则为标号在标号表中的下标。
+
+符号引用：（用于指令等需引用具体符号的场合）
+table：引用符号所在的符号表。若该引用表示标号，则table=NULL。
+index：引用符号在符号表中的下标。若该引用表示标号，则index=标号。
+
+标号表：
+仅有一个匿名属性，在语义分析进行中表示对应指令在指令表中的下标；在语义分析结束指令重排序后，表示对应指令重排序后的下标。
+
+分析栈符号属性：
+code：该符号的起始指令下标
+end：该符号的末尾指令下标
+label：等效于“insts[符号.code].label”
+index：专用于表达式符号，等效于“表达式.attr.exp.index”
+truelist：专用于表达式符号，等效于“表达式.attr.exp.truelist”
+falselist：专用于表达式符号，等效于“表达式.attr.exp.falselist”
+nextlist：若该符号的next被求出，应该将next值填入哪些指令（下标表示）的跳转目标处
+type：该符号的语义类型。类型表可参照非终结符表，但常数和表达式被分为整型、浮点型（使用attr属性加以区分）
+attr：各类符号自身独有的详细信息。
+
+工具函数：
+newlabel(i)：返回新标号，并在标号表中填入“该标号指向指令池中下标为i的指令”
+newtemp()：从临时符号池中申请一个临时符号下标并返回。临时符号池初始为空，每当申请超出池大小时便从符号表中申请新符号空间
+freetemp()：释放上一个申请的临时符号，让其返回符号池
+backpatch(l, a)：使用标号a填写列表l指定的若干goto指令的跳转地址参数（即result参数）
+merge(l1, l2)：合并两个列表
+gen(op, arg1, arg2, result)：在指令池中申请一个指令空间并填入指定的四元式，最后返回新指令的下标
+newsymbol(name, type, attr)：在当前符号表中创建新符号，返回新符号下标
+newtable()：在当前符号表中创建新符号表，并进入之。
+quittable()：退出当前符号表，返回上一级符号表。
