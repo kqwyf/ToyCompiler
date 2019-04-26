@@ -11,10 +11,10 @@
 
 using namespace std;
 
-const int STATE_N = 294;
+const int STATE_N = 328;
 const int SYMBOL_N = 71;
-const int PRO_N = 79;
-const int TERMINAL_N = 35;
+const int PRO_N = 78;
+const int TERMINAL_N = 36;
 
 const int INIT_STATE = 0;
 const int END_SYMBOL = 0;
