@@ -1,64 +1,3 @@
-
-
-
-PROGRAM.code = DECLARE_S.code;
-PROGRAM.code = 无
-
-
-if(STATEMENT_S1.nextlist != NULL) {STATEMENT.label = newlabel(STATEMENT.code); backpatch(STATEMENT_S1.nextlist, STATEMENT.label);} if(STATEMENT.code != NULL) STATEMENT_S1 | STATEMENT;
-STATEMENT_S.code = STATEMENT_S.end = STATEMENT.code;
-
-STATEMENT.nextlist = SELECT.nextlist;
-STATEMENT.nextlist = LOOP.nextlist;
-
-quittable(); STATEMENT.code = STATEMENT_S.code;
-newtable();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-quittable(); STATEMENT.label = newlabel(); backpatch(SELECT_BEGIN.attr.sel_b.truelist, STATEMENT.label); SELECT.nextlist = merge(SELECT_BEGIN.falselist, STATEMENT.nextlist); SELECT.code = SELECT_BEGIN.code | STATEMENT.code;
-quittable(); STATEMENT1.label = newlabel(); backpatch(SELECT_BEGIN.attr.sel_b.truelist, STATEMENT1.label); STATEMENT2.label = newlabel(); backpatch(SELECT_BEGIN.falselist, STATEMENT2.label); SELECT.code = SELECT_BEGIN.code | STATEMENT1.code | tmp = gen(J, 0, 0, 0) | STATEMENT2.code; SELECT.nextlist = merge(STATEMENT1.nextlist, [tmp], STATEMENT2.nextlist);
-newtable(); SELECT_BEGIN.attr.sel_b.truelist = EXPRESSION.truelist; SELECT_BEGIN.attr.sel_b.falselist = EXPRESSION.falselist; SELECT_BEGIN.code = EXPRESSION.code;
-quittable(); newtable();
-
-
-quittable(); STATEMENT.label = newlabel(); LOOP_BEGIN.label = newlabel(); backpatch(LOOP_BEGIN.truelist, STATEMENT.label); LOOP.nextlist = LOOP_BEGIN.falselist; backpatch(STATEMENT.nextlist, LOOP_BEGIN.label); LOOP.code = LOOP_BEGIN.code | STATEMENT | gen(J, 0, 0, LOOP_BEGIN.label);
-newtable(); LOOP_BEGIN.attr.loop_b.truelist = EXPRESSION.truelist; LOOP_BEGIN.attr.loop_b.falselist = EXPRESSION.falselist; LOOP_BEGIN.code = EXPRESSION.code;
-
-
-
 EXPRESSION.index = identifier.symbolIndex; EXPRESSION.type = identifier.type; EXPRESSION.attr.exp.isTemp = false; if(identifier.type == ARRAY) {EXPRESSION.attr.exp.offset = 0; EXPRESSION.attr.exp.ndim = 0;}
 EXPRESSION.index = constant.symbolIndex; EXPRESSION.type = constant.type; EXPRESSION.attr.exp.isTemp = false;
 EXPRESSION = EXPRESSION1
@@ -77,20 +16,6 @@ EXPRESSION_S.attr.exps.list = new; EXPRESSION_S.attr.exps.list.push_back(EXPRESS
 
 IDENTIFIER_S1.attr.ids.list.push_back(identifier.symbolIndex); IDENTIFIER_S.atr.ids.list = IDENTIFIER_S1.attr.ids.list;
 IDENTIFIER_S.attr.ids.list = new; IDENTIFIER_S.attr.ids.list.push_back(identifier.symbolIndex);
-
-
-OPERATOR_ARITH.type = PLUS;
-OPERATOR_ARITH.type = MINUS;
-OPERATOR_ARITH.type = MULTIPLY;
-OPERATOR_ARITH.type = DIVIDE;
-
-
-OPERATOR_REL.type = EQUAL;
-OPERATOR_REL.type = NOTEQUAL;
-OPERATOR_REL.type = GREATER;
-OPERATOR_REL.type = GREATEREQUAL;
-OPERATOR_REL.type = LESS;
-OPERATOR_REL.type = LESSEQUAL;
 
 
 |表示连接两个符号对应的两段指令链表，连接结果无需返回，因为其自动成为第一个符号的指令链表。
@@ -117,12 +42,17 @@ index：引用符号在符号表中的下标。若该引用表示标号，则ind
 code：该符号的起始指令下标
 end：该符号的末尾指令下标
 label：等效于“insts[符号.code].label”
-index：专用于表达式符号，等效于“表达式.attr.exp.index”
-truelist：专用于表达式符号，等效于“表达式.attr.exp.truelist”
-falselist：专用于表达式符号，等效于“表达式.attr.exp.falselist”
-nextlist：若该符号的next被求出，应该将next值填入哪些指令（下标表示）的跳转目标处
+nextlist：若该符号的next被求出，应该将next的label填入哪些指令（下标表示）的跳转目标处。但对于SELECT_MID，其nextlist的含义为执行完STATEMENT1后应跳转至何处（即选择语句外）
 type：该符号的语义类型。类型表可参照非终结符表，但常数和表达式被分为整型、浮点型（使用attr属性加以区分）
 attr：各类符号自身独有的详细信息。
+
+表达式符号属性：
+truelist：
+falselist：
+isTemp：指示该表达式的值是否是以临时符号的形式存在于符号表中
+ref：表达式值符号在符号表中的引用。对于布尔表达式，其通常情况下不会产生临时值，但依然要为之在符号表中开辟临时符号空间，以统一各种表达式的操作。在需要对布尔表达式求值时，可能需要将其值写入其对应的临时符号中。
+一切布尔型表达式均自带跳转指令。
+
 
 工具函数：
 newlabel(i)：返回新标号，并在标号表中填入“该标号指向指令池中下标为i的指令”

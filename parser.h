@@ -28,7 +28,6 @@ const int BOOL_SIZE = 1;
 
 struct Inst;
 class InstTable;
-class LabelTable;
 class GrammaSymbol;
 class AnalyserStackItem;
 struct TempSymbolTable;
@@ -62,7 +61,7 @@ union ExternalAttribute {
     SelBeginInfo *sel_b; // SELECT_BEGIN
     LoopBeginInfo *loop_b; // LOOP_BEGIN
     ConstInfo *con; // CONSTANT
-    TypeInfo *typ; // TYPE, TYPE_BASIC, TYPE_ARRAY, TYPE_STRUCT
+    TypeInfo *typ; // TYPE, TYPE_BASIC, TYPE_ARRAY
     TypeStructInfo *typ_str; // TYPE_STRUCT
     int pCount; // PARAMETERS, DECLARE_FUNC_MID
 };
@@ -80,21 +79,22 @@ class GrammaSymbol {
 struct ExpInfo {
     bool isTemp; // if this expression is related to a temp symbol in the symbol table
     SymbolTableEntryRef ref; // the related (maybe temp) symbol in the symbol table
+    int offset; // offset relative to the symbol base address (in array and struct), -1 for simple identifier
+    int ndim; // > 0 only when the expression is an array access expression, 0 for scalar
     list<int> trueList; // indices of instructions which depend on the true label of this symbol
     list<int> falseList; // indices of instructions which depend on the false label of this symbol
 };
 
 struct ExpsInfo {
-    list<ExpInfo> expList;
-    list<int> nextList;
+    list<ExpInfo*> expList;
 };
 
 struct IdInfo {
-    int nameIndex;
+    int name;
 };
 
 struct IdsInfo {
-    list<int> nameIndexList;
+    list<int> nameList;
 };
 
 struct SelBeginInfo {
@@ -115,12 +115,12 @@ struct FuncInfo {
 struct ArrayInfo {
     SymbolDataType dataType; // value in {DT_INT, DT_FLOAT, DT_BOOL}
     int ndim; // number of dimensions of this array
-    list<int> sizes; // size of each dimension
+    list<int> lens; // length of each dimension
 };
 
 struct ConstInfo {
     SymbolDataType dataType; // value in {DT_INT, DT_FLOAT}
-    int nameIndex;
+    int name;
 };
 
 struct TypeInfo {
@@ -132,7 +132,7 @@ struct TypeInfo {
 };
 
 struct TypeStructInfo {
-    int nameIndex;
+    int name;
 };
 
 class AnalyserStackItem {
@@ -143,14 +143,11 @@ class AnalyserStackItem {
 };
 
 struct SymbolTableEntry {
-    union {
-        char *strValue;
-        int intValue;
-        double floatValue;
-    } name;
+    int name;
     int type; // symbol type
     SymbolDataType dataType; // data type
     int offset;
+    int size;
     union {
         SymbolTable *table;
         ArrayInfo *arr;
@@ -161,23 +158,17 @@ struct SymbolTableEntry {
 class SymbolTable : public vector<SymbolTableEntry> {
     public:
         SymbolTable(SymbolTable *parent);
-        SymbolTableEntryRef newSymbol(const char *name, int type, SymbolDataType dataType, int size);
-        SymbolTableEntryRef newSymbol(int value);
-        SymbolTableEntryRef newSymbol(double value);
-        SymbolTableEntryRef newTemp(SymbolTableEntry &entry, int size);
+        SymbolTableEntryRef newSymbol(int name, int type, SymbolDataType dataType, int size);
+        SymbolTableEntryRef newTemp(SymbolDataType dataType, int size);
         void freeTemp();
-        SymbolTableEntryRef findSymbol(const char *name);
-        SymbolTableEntryRef findSymbol(int value);
-        SymbolTableEntryRef findSymbol(double value);
+        SymbolTableEntryRef findSymbol(int name);
         int tempCount;
         int offset;
         bool busy;
         SymbolTable *parent;
         TempSymbolTable *tempTable;
-        map<string, int> stringMap;
+        map<int, int> nameMap;
         static SymbolTable *global;
-        static map<int, int> intMap;
-        static map<double, int> floatMap;
 };
 
 struct TempSymbolTable : public vector<int> {
@@ -198,15 +189,10 @@ struct Inst {
 
 class InstTable : public vector<Inst> {
     public:
-        InstTable();
         int gen(OpCode op, const SymbolTableEntryRef &arg1, const SymbolTableEntryRef &arg2, const SymbolTableEntryRef &result);
         void backPatch(list<int> &l, int label);
-};
-
-class LabelTable : public vector<int> {
-    public:
-        LabelTable();
         int newLabel(int index);
+        vector<int> labelTable;
 };
 
 typedef vector<AnalyserStackItem> AnalyserStack;
