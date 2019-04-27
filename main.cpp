@@ -65,6 +65,34 @@ const char *(lexicalTypeString[]) = {
     "COMMENT"
 };
 
+const char *(OPCODE_STRING[]) = {
+    "NONE",
+    "ADD",
+    "SUB",
+    "MUL",
+    "DIV",
+    "NEG",
+    "MOV",
+    "TRU",
+    "FAL",
+    "JMP",
+    "JZ",
+    "JNZ",
+    "JL",
+    "JG",
+    "JLE",
+    "JGE",
+    "JE",
+    "JNE",
+    "PAR",
+    "CALL",
+    "RET",
+    "MOVS",
+    "MOVT"
+};
+
+int tableNumber(SymbolTable *table);
+
 int main(int argc, char **argv) {
     if(argc == 1) {
         printf(usage, argv[0]);
@@ -205,21 +233,50 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    // gramma analysis
+    // gramma and semantic analysis
+    InstTable *instTable = NULL;
 #ifdef PRINT_PRODUCTIONS
     ProductionSequence *productionSequence = new ProductionSequence();
-    err = parse(*tokenTable, symbolTable, *productionSequence);
+    if(mode == SEMANTIC) {
+        instTable = new InstTable();
+        err = parse(*tokenTable, symbolTable, instTable, *productionSequence);
+    }
     if(err) putchar('\n');
     printf("\nProduction sequence:\n");
     for(ProductionSequence::iterator it = productionSequence->begin(); it != productionSequence->end(); it++)
         printf("%s\n", PRO[*it]);
+#else
+    if(mode == SEMANTIC) {
+        instTable = new InstTable();
+        err = parse(*tokenTable, symbolTable, instTable);
+    }
+#endif
     if(mode == GRAMMA) {
         delete tokenTable;
         delete symbolTable;
+#ifdef PRINT_PRODUCTIONS
         delete productionSequence;
+#endif
         return 0;
     }
-#else
-    err = parse(*tokenTable);
-#endif
+    if(err) putchar('\n');
+    printf("\nInstruction sequence:\n");
+    for(unsigned long i = 0; i < instTable->size(); i++) {
+        if((*instTable)[i].label >= 0)
+            printf(".L%-4d", (*instTable)[i].label);
+        else
+            printf("      ");
+        if((*instTable)[i].result.table == NULL)
+            printf("(%4s, %03d:%03d, %03d:%03d, %03d:%03d)\n", OPCODE_STRING[(*instTable)[i].op], tableNumber((*instTable)[i].arg1.table), (*instTable)[i].arg1.index, tableNumber((*instTable)[i].arg2.table), (*instTable)[i].arg2.index, tableNumber((*instTable)[i].result.table), (*instTable)[i].result.index);
+        else
+            printf("(%4s, %03d:%03d, %03d:%03d, [ %03d ])\n", OPCODE_STRING[(*instTable)[i].op], tableNumber((*instTable)[i].arg1.table), (*instTable)[i].arg1.index, tableNumber((*instTable)[i].arg2.table), (*instTable)[i].arg2.index, (*instTable)[i].result.index);
+    }
 }
+
+int tableNumber(SymbolTable *table) {
+    if(table != NULL)
+        return table->number;
+    else
+        return 0;
+}
+

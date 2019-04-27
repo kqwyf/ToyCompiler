@@ -162,6 +162,7 @@ class SymbolTable : public vector<SymbolTableEntry> {
         SymbolTableEntryRef newTemp(SymbolDataType dataType, int size);
         void freeTemp();
         SymbolTableEntryRef findSymbol(int name);
+        int number;
         int tempCount;
         int offset;
         bool busy;
@@ -169,6 +170,7 @@ class SymbolTable : public vector<SymbolTableEntry> {
         TempSymbolTable *tempTable;
         map<int, int> nameMap;
         static SymbolTable *global;
+        static int n;
 };
 
 struct TempSymbolTable : public vector<int> {
@@ -196,12 +198,12 @@ class InstTable : public vector<Inst> {
 };
 
 typedef vector<AnalyserStackItem> AnalyserStack;
-typedef vector<int> ProductionSequence;
 
 #ifdef PRINT_PRODUCTIONS
-int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, ProductionSequence &seq);
+typedef vector<int> ProductionSequence;
+int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTable *iTable, ProductionSequence &seq);
 #else
-int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable);
+int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTable *iTable);
 #endif
 
 #endif
