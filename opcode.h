@@ -22,7 +22,7 @@ enum OpCode {
     OP_JNE,  // if(*arg1 != *arg2) goto result
     OP_PAR,  // param result
     OP_CALL, // *arg1 = result()
-    OP_RET,  // return *result
+    OP_RET,  // return symbolTable[0]
     OP_MOVS, // *arg1 = *(arg2 + *result), when result.table is NULL, *arg1 = *(arg2 + result.index)
     OP_MOVT  // *(arg1 + *result) = *arg2, when result.table is NULL, *(arg1 + result.index) = *arg2
 };

@@ -1,15 +1,15 @@
 BUILD_PATH = ./build
 
 all: $(BUILD_PATH)
-	g++ -O2 main.cpp lex.cpp parser.cpp grammar.cpp -o $(BUILD_PATH)/main
+	g++ -O2 -DMATCH_SOURCE -DPRINT_PRODUCTIONS main.cpp lex.cpp parser.cpp grammar.cpp -o $(BUILD_PATH)/main
 
 debug: $(BUILD_PATH)
-	g++ -O2 -DDEBUG main.cpp lex.cpp parser.cpp grammar.cpp -o $(BUILD_PATH)/main
+	g++ -O2 -DMATCH_SOURCE -DPRINT_PRODUCTIONS -DDEBUG main.cpp lex.cpp parser.cpp grammar.cpp -o $(BUILD_PATH)/main
 
 $(BUILD_PATH):
 	mkdir $(BUILD_PATH)
 
-test: testl testg testlr
+test: testl testlr testg testS
 
 testl:
 	./build/main -l ./tests/1.src | diff - ./tests/1.out
@@ -30,6 +30,9 @@ testg:
 	./build/main -g ./tests/14.src | diff - ./tests/14.out
 	./build/main -g ./tests/15.src | diff - ./tests/15.out
 	./build/main -g ./tests/16.src | diff - ./tests/16.out
+
+testS:
+	./build/main -s ./tests/21.src | diff - ./tests/21.out
 
 testlr:
 	python3 ./LR1.py ./tests/g1.grm -h | diff - ./tests/g1.out

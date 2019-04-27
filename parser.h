@@ -1,8 +1,6 @@
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
-#define PRINT_PRODUCTIONS
-
 #include <vector>
 #include <list>
 #include <map>
@@ -169,6 +167,7 @@ class SymbolTable : public vector<SymbolTableEntry> {
         SymbolTable *parent;
         TempSymbolTable *tempTable;
         map<int, int> nameMap;
+        static list<SymbolTable*> tables;
         static SymbolTable *global;
         static int n;
 };

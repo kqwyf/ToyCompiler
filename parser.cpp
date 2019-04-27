@@ -12,11 +12,12 @@ using namespace std;
 #include "parser.h"
 #include "grammar.h"
 
-static const SymbolTableEntryRef NULL_REF = {NULL, 0};
+static const SymbolTableEntryRef NULL_REF = {NULL, -1};
 
 // Parsing context
 static int row = -1, col = -1;
 int SymbolTable::n = 0;
+list<SymbolTable*> SymbolTable::tables;
 AnalyserStack *stack = NULL;
 SymbolTable *symbolTable = NULL;
 SymbolTable *SymbolTable::global = NULL;
@@ -57,6 +58,15 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
         SymbolTable::global = new SymbolTable(NULL);
         instTable = new InstTable();
         enterTable(SymbolTable::global);
+        for(TokenTable::iterator it = tokenTable.begin(); it != tokenTable.end(); it++) {
+            if(it->type == CONSTANT) {
+                LexicalSymbolValue &value = (*lexicalSymbolTable)[it->index].value;
+                if(value.numberValue.isFloat)
+                    symbolTable->newSymbol(it->index, CONSTANT, DT_FLOAT, FLOAT_SIZE);
+                else
+                    symbolTable->newSymbol(it->index, CONSTANT, DT_INT, INT_SIZE);
+            }
+        }
     }
     stack = new AnalyserStack();
     GrammaSymbol endSymbol = GrammaSymbol(/*code=*/-1, /*end=*/-1, /*type=*/END_SYMBOL);
@@ -323,12 +333,13 @@ GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
 
 AnalyserStackItem::AnalyserStackItem(int stat, GrammaSymbol sym) : stat(stat), sym(sym) {}
 
-SymbolTable::SymbolTable(SymbolTable *parent) : number(++SymbolTable::n),
+SymbolTable::SymbolTable(SymbolTable *parent) : number(SymbolTable::n++),
                                                 tempCount(0),
                                                 offset(0),
                                                 busy(false),
                                                 parent(parent) {
     // this->tempTable = new TempSymbolTable(this); // TODO: check if temp table is necessary
+    tables.push_back(this);
 }
 
 SymbolTableEntryRef SymbolTable::newSymbol(int name, int type, SymbolDataType dataType, int size) {
@@ -714,6 +725,8 @@ int SA_22(GrammaSymbol &sym) {
     GrammaSymbol statement_s = (*stack)[n - 2].sym;
     sym.code = statement_s.code;
     sym.end = statement_s.end;
+    int code = instTable->gen(OP_RET, NULL_REF, NULL_REF, NULL_REF);
+    link(sym, code);
     quitTable();
     int label = instTable->newLabel(sym.code);
     symbolTable->back().offset = label; // the back element of the symbol table must be the symbol of this function at this time
@@ -728,9 +741,11 @@ int SA_23(GrammaSymbol &sym) {
 #endif
     int n = stack->size();
     GrammaSymbol declare_func_mid = (*stack)[n - 2].sym;
-    sym.code = sym.end = -1; // TODO: add return statement automatically and set the offset as the label
+    int code = instTable->gen(OP_RET, NULL_REF, NULL_REF, NULL_REF);
+    sym.code = sym.end = code;
     quitTable();
-    // TODO: symbolTable->back().offset = label;
+    int label = instTable->newLabel(sym.code);
+    symbolTable->back().offset = label;
     symbolTable->back().attr.func->pCount = declare_func_mid.attr.pCount;
     return 0;
 }
@@ -807,7 +822,7 @@ int SA_27(GrammaSymbol &sym) {
     } else if(size < 0) {
         return size;
     }
-    SymbolTableEntryRef ref = symbolTable->newSymbol(identifier.attr.id->name, IDENTIFIER, DT_BLOCK, 0);
+    SymbolTableEntryRef ref = symbolTable->newSymbol(identifier.attr.id->name, IDENTIFIER, type.attr.typ->dataType, 0);
     if(type.attr.typ->dataType == DT_ARRAY)
         (*ref.table)[ref.index].attr.arr = type.attr.typ->attr.arr;
     else if(type.attr.typ->dataType == DT_STRUCT)
@@ -835,7 +850,7 @@ int SA_28(GrammaSymbol &sym) {
     } else if(size < 0) {
         return size;
     }
-    SymbolTableEntryRef ref = symbolTable->newSymbol(identifier.attr.id->name, IDENTIFIER, DT_BLOCK, 0);
+    SymbolTableEntryRef ref = symbolTable->newSymbol(identifier.attr.id->name, IDENTIFIER, type.attr.typ->dataType, 0);
     if(type.attr.typ->dataType == DT_ARRAY)
         (*ref.table)[ref.index].attr.arr = type.attr.typ->attr.arr;
     else if(type.attr.typ->dataType == DT_STRUCT)
@@ -1254,7 +1269,7 @@ int SA_46(GrammaSymbol &sym) {
     sym.attr.exp->isTemp = true;
     sym.attr.exp->ndim = 0;
     sym.attr.exp->offset = -1;
-    int code = instTable->gen(OP_CALL, sym.attr.exp->ref, NULL_REF, ref);
+    int code = instTable->gen(OP_CALL, sym.attr.exp->ref, NULL_REF, {NULL, (*ref.table)[ref.index].offset});
     link(sym, code);
     if(!expression_s.nextList.empty()) {
         int codeLabel = instTable->newLabel(code);
@@ -1292,7 +1307,7 @@ int SA_47(GrammaSymbol &sym) {
     sym.attr.exp->isTemp = true;
     sym.attr.exp->ndim = 0;
     sym.attr.exp->offset = -1;
-    int code = instTable->gen(OP_CALL, sym.attr.exp->ref, NULL_REF, ref);
+    int code = instTable->gen(OP_CALL, sym.attr.exp->ref, NULL_REF, {NULL, (*ref.table)[ref.index].offset});
     sym.code = sym.end = code;
     if(returnValue.dataType == DT_BOOL) {
         int trueCode = instTable->gen(OP_JNZ, sym.attr.exp->ref, NULL_REF, NULL_REF);

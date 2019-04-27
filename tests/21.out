@@ -1,0 +1,186 @@
+Token sequence:
+int             < INT         ,        >
+input           < IDENTIFIER  , 1      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+}               < RIGHTBRACE  ,        >
+int             < INT         ,        >
+print           < IDENTIFIER  , 2      >
+(               < LEFTPAREN   ,        >
+int             < INT         ,        >
+a               < IDENTIFIER  , 3      >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+}               < RIGHTBRACE  ,        >
+int             < INT         ,        >
+main            < IDENTIFIER  , 4      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+int             < INT         ,        >
+a               < IDENTIFIER  , 3      >
+,               < COMMA       ,        >
+b               < IDENTIFIER  , 5      >
+;               < SEMICOLON   ,        >
+a               < IDENTIFIER  , 3      >
+=               < ASSIGN      ,        >
+input           < IDENTIFIER  , 1      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+b               < IDENTIFIER  , 5      >
+=               < ASSIGN      ,        >
+input           < IDENTIFIER  , 1      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+print           < IDENTIFIER  , 2      >
+(               < LEFTPAREN   ,        >
+a               < IDENTIFIER  , 3      >
++               < PLUS        ,        >
+b               < IDENTIFIER  , 5      >
+)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+
+Symbol table:
+1     input
+2     print
+3     a
+4     main
+5     b
+
+Production sequence:
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+DECLARE_FUNC_MID -> ) {
+DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+PARAMETERS -> TYPE identifier
+DECLARE_FUNC_MID -> PARAMETERS ) {
+DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+DECLARE_FUNC_MID -> ) {
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+IDENTIFIER_S -> IDENTIFIER_S , identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION1 -> identifier ( )
+EXPRESSION2 -> EXPRESSION1
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION1 -> identifier ( )
+EXPRESSION2 -> EXPRESSION1
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION5 + EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+EXPRESSION_S -> EXPRESSION
+EXPRESSION1 -> identifier ( EXPRESSION_S )
+EXPRESSION2 -> EXPRESSION1
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE_S DECLARE
+PROGRAM -> DECLARE_S
+
+Semantic Symbol Tables:
+
+Global Symbol Table (Table 0):
+  DataType   |     Name     |  Offset  |    Attr
+-------------+--------------+----------+------------
+BLOCK        | input        | .L0      | Table 1, Params#: 0
+BLOCK        | print        | .L1      | Table 2, Params#: 1
+BLOCK        | main         | .L2      | Table 3, Params#: 0
+
+Table 1:
+  DataType   |     Name     |  Offset  |    Attr
+-------------+--------------+----------+------------
+INT          | (anonymous)  | 0        | 
+
+Table 2:
+  DataType   |     Name     |  Offset  |    Attr
+-------------+--------------+----------+------------
+INT          | (anonymous)  | 0        | 
+INT          | a            | 4        | 
+
+Table 3:
+  DataType   |     Name     |  Offset  |    Attr
+-------------+--------------+----------+------------
+INT          | (anonymous)  | 0        | 
+INT          | a            | 4        | 
+INT          | b            | 8        | 
+
+
+Instruction sequence:
+.L0    ( RET,        ,        ,        )
+.L1    ( RET,        ,        ,        )
+.L2    (CALL,   3:3  ,        , .L0    )
+       ( MOV,   3:1  ,   3:3  ,        )
+       (CALL,   3:3  ,        , .L0    )
+       ( MOV,   3:2  ,   3:3  ,        )
+       ( ADD,   3:1  ,   3:2  ,   3:3  )
+       ( PAR,        ,        ,   3:3  )
+       (CALL,   3:3  ,        , .L1    )
+       ( RET,        ,        ,        )

@@ -65,6 +65,17 @@ const char *(lexicalTypeString[]) = {
     "COMMENT"
 };
 
+const char *(DATATYPE_STRING[]) = {
+    "NONE",
+    "BLOCK",
+    "ARRAY",
+    "INT",
+    "FLOAT",
+    "BOOL",
+    "STRUCT",
+    "STRUCT_DEF"
+};
+
 const char *(OPCODE_STRING[]) = {
     "NONE",
     "ADD",
@@ -91,7 +102,7 @@ const char *(OPCODE_STRING[]) = {
     "MOVT"
 };
 
-int tableNumber(SymbolTable *table);
+void showTable(SymbolTable *table, LexicalSymbolTable *nameTable);
 
 int main(int argc, char **argv) {
     if(argc == 1) {
@@ -159,8 +170,8 @@ int main(int argc, char **argv) {
         return 0;
     }
     if(mode == NONE_MODE) {
-        printf("No compiling mode selected. Default to gramma.\n");
-        mode = GRAMMA;
+        printf("No compiling mode selected. Default to semantic.\n");
+        mode = SEMANTIC;
     }
     FILE *ft = NULL;
     if(targetFile != NULL) {
@@ -237,19 +248,17 @@ int main(int argc, char **argv) {
     InstTable *instTable = NULL;
 #ifdef PRINT_PRODUCTIONS
     ProductionSequence *productionSequence = new ProductionSequence();
-    if(mode == SEMANTIC) {
+    if(mode == SEMANTIC)
         instTable = new InstTable();
-        err = parse(*tokenTable, symbolTable, instTable, *productionSequence);
-    }
+    err = parse(*tokenTable, symbolTable, instTable, *productionSequence);
     if(err) putchar('\n');
     printf("\nProduction sequence:\n");
     for(ProductionSequence::iterator it = productionSequence->begin(); it != productionSequence->end(); it++)
         printf("%s\n", PRO[*it]);
 #else
-    if(mode == SEMANTIC) {
+    if(mode == SEMANTIC)
         instTable = new InstTable();
-        err = parse(*tokenTable, symbolTable, instTable);
-    }
+    err = parse(*tokenTable, symbolTable, instTable);
 #endif
     if(mode == GRAMMA) {
         delete tokenTable;
@@ -260,23 +269,73 @@ int main(int argc, char **argv) {
         return 0;
     }
     if(err) putchar('\n');
+    printf("\nSemantic Symbol Tables:\n\n");
+    for(list<SymbolTable*>::iterator it = SymbolTable::tables.begin(); it != SymbolTable::tables.end(); it++)
+        showTable(*it, symbolTable);
     printf("\nInstruction sequence:\n");
     for(unsigned long i = 0; i < instTable->size(); i++) {
         if((*instTable)[i].label >= 0)
-            printf(".L%-4d", (*instTable)[i].label);
+            printf(".L%-4d ", (*instTable)[i].label);
         else
-            printf("      ");
-        if((*instTable)[i].result.table == NULL)
-            printf("(%4s, %03d:%03d, %03d:%03d, %03d:%03d)\n", OPCODE_STRING[(*instTable)[i].op], tableNumber((*instTable)[i].arg1.table), (*instTable)[i].arg1.index, tableNumber((*instTable)[i].arg2.table), (*instTable)[i].arg2.index, tableNumber((*instTable)[i].result.table), (*instTable)[i].result.index);
+            printf("       ");
+        printf("(%4s, ", OPCODE_STRING[(*instTable)[i].op]);
+        if((*instTable)[i].arg1.index == -1)
+            printf("       , ");
         else
-            printf("(%4s, %03d:%03d, %03d:%03d, [ %03d ])\n", OPCODE_STRING[(*instTable)[i].op], tableNumber((*instTable)[i].arg1.table), (*instTable)[i].arg1.index, tableNumber((*instTable)[i].arg2.table), (*instTable)[i].arg2.index, (*instTable)[i].result.index);
+            printf("%3d:%-3d, ", (*instTable)[i].arg1.table->number, (*instTable)[i].arg1.index);
+        if((*instTable)[i].arg2.index == -1)
+            printf("       , ");
+        else
+            printf("%3d:%-3d, ", (*instTable)[i].arg2.table->number, (*instTable)[i].arg2.index);
+        if((*instTable)[i].result.index == -1)
+            printf("       )\n");
+        else if((*instTable)[i].result.table == NULL)
+            printf(".L%-4d )\n", (*instTable)[i].result.index);
+        else
+            printf("%3d:%-3d)\n", (*instTable)[i].result.table->number, (*instTable)[i].result.index);
     }
 }
 
-int tableNumber(SymbolTable *table) {
-    if(table != NULL)
-        return table->number;
+void showTable(SymbolTable *table, LexicalSymbolTable *nameTable) {
+    if(table->number == 0)
+        printf("Global Symbol Table (Table 0):\n");
     else
-        return 0;
+        printf("Table %d:\n", table->number);
+    printf("  DataType   |     Name     |  Offset  |    Attr\n");
+    printf("-------------+--------------+----------+------------\n");
+    for(SymbolTable::iterator it = table->begin(); it != table->end(); it++) {
+        printf("%-12s | ", DATATYPE_STRING[it->dataType]);
+        LexicalSymbolTableEntry &nameEntry = (*nameTable)[it->name];
+        if(it->name == 0)
+            printf("(anonymous)  | ");
+        else if(nameEntry.isString)
+            printf("%-12s | ", nameEntry.value.stringValue);
+        else if(nameEntry.value.numberValue.isFloat)
+            printf("%-12f | ", nameEntry.value.numberValue.value.floatValue);
+        else
+            printf("%-12d | ", nameEntry.value.numberValue.value.intValue);
+        if(it->dataType == DT_BLOCK && it->name != 0)
+            printf(".L%-6d | ", it->offset);
+        else if(it->dataType == DT_BLOCK)
+            printf("         | ");
+        else
+            printf("%-8d | ", it->offset);
+        if(it->dataType == DT_ARRAY) {
+            if(it->attr.arr->dataType == DT_INT)
+                printf("int");
+            else if(it->attr.arr->dataType == DT_FLOAT)
+                printf("float");
+            else if(it->attr.arr->dataType == DT_BOOL)
+                printf("bool");
+            for(list<int>::iterator i = it->attr.arr->lens.begin(); i != it->attr.arr->lens.end(); i++)
+                printf("[%d]", *i);
+        } else if(it->dataType == DT_BLOCK && it->name != 0) {
+            printf("Table %d, Params#: %d", it->attr.func->table->number, it->attr.func->pCount);
+        } else if(it->dataType == DT_STRUCT || it->dataType == DT_STRUCT_DEF) {
+            printf("Table %d", it->attr.table->number);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 

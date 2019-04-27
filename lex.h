@@ -1,8 +1,6 @@
 #ifndef __LEX_H__
 #define __LEX_H__
 
-#define MATCH_SOURCE
-
 #include <vector>
 
 #include "symbol.h"
