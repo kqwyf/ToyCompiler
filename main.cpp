@@ -339,7 +339,7 @@ void showTable(SymbolTable *table, LexicalSymbolTable *nameTable) {
                 printf("[%d]", *i);
         } else if(it->dataType == DT_BLOCK && it->name != 0) {
             printf("Table %d, Params#: %d", it->attr.func->table->number, it->attr.func->pCount);
-        } else if(it->dataType == DT_STRUCT || it->dataType == DT_STRUCT_DEF) {
+        } else if(it->dataType == DT_BLOCK || it->dataType == DT_STRUCT || it->dataType == DT_STRUCT_DEF) {
             printf("Table %d", it->attr.table->number);
         }
         printf("\n");

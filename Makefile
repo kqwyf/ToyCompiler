@@ -40,6 +40,11 @@ testS:
 	./build/main -s ./tests/21.src | diff - ./tests/21.out
 	./build/main -s ./tests/22.src | diff - ./tests/22.out
 	./build/main -s ./tests/23.src | diff - ./tests/23.out
+	./build/main -s ./tests/24.src | diff - ./tests/24.out
+	./build/main -s ./tests/25.src | diff - ./tests/25.out
+	./build/main -s ./tests/26.src | diff - ./tests/26.out
+	./build/main -s ./tests/27.src | diff - ./tests/27.out
+	./build/main -s ./tests/28.src | diff - ./tests/28.out
 	@echo ""
 
 testlr:

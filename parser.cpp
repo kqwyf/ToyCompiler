@@ -2,6 +2,7 @@
 // TODO: add auto type conversion
 // TODO: add nested struct support (production #54)
 // TODO: when id.id is reduced as a right-value, allocate a temp symbol for it
+// TODO: add return statement
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -936,6 +937,10 @@ int SA_22(GrammaSymbol &sym) {
     sym.end = statement_s.end;
     int code = instTable->gen(OP_RET, NULL_REF, NULL_REF, NULL_REF);
     link(sym, code);
+    if(!statement_s.nextList.empty()) {
+        int label = instTable->newLabel(code);
+        instTable->backPatch(statement_s.nextList, label);
+    }
     quitTable();
     int label = instTable->newLabel(sym.code);
     symbolTable->back().offset = label; // the back element of the symbol table must be the symbol of this function at this time
@@ -1329,12 +1334,13 @@ int SA_42(GrammaSymbol &sym) {
     sym.code = loop_begin.code;
     sym.end = loop_begin.end;
     link(sym, statement);
+    int loopLabel = instTable->newLabel(loop_begin.code);
     int bodyLabel = instTable->newLabel(statement.code);
+    int code = instTable->gen(OP_JMP, NULL_REF, NULL_REF, {NULL, loopLabel});
+    link(sym, code);
     instTable->backPatch(loop_begin.attr.loop_b->trueList, bodyLabel);
-    if(!statement.nextList.empty()) {
-        int loopLabel = instTable->newLabel(loop_begin.code);
+    if(!statement.nextList.empty())
         instTable->backPatch(statement.nextList, loopLabel);
-    }
     sym.nextList.splice(sym.nextList.end(), loop_begin.attr.loop_b->falseList);
     quitTable();
     if(!loop_begin.nextList.empty()) {

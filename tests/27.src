@@ -1,0 +1,10 @@
+int main() {
+    int a, b;
+    float c, d;
+    a = b + c;
+    b = a - d;
+    if(a + b > c)
+        c = b * c;
+    if(c * d < a)
+        d = d / a;
+}

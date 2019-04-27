@@ -1,0 +1,274 @@
+Token sequence:
+int             < INT         ,        >
+main            < IDENTIFIER  , 1      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+int             < INT         ,        >
+i               < IDENTIFIER  , 2      >
+,               < COMMA       ,        >
+n               < IDENTIFIER  , 3      >
+;               < SEMICOLON   ,        >
+n               < IDENTIFIER  , 3      >
+=               < ASSIGN      ,        >
+10              < CONSTANT    , 4      >
+;               < SEMICOLON   ,        >
+i               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+0               < CONSTANT    , 5      >
+;               < SEMICOLON   ,        >
+while           < WHILE       ,        >
+(               < LEFTPAREN   ,        >
+i               < IDENTIFIER  , 2      >
+<               < LESS        ,        >
+n               < IDENTIFIER  , 3      >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+i               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+i               < IDENTIFIER  , 2      >
++               < PLUS        ,        >
+1               < CONSTANT    , 6      >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+i               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+0               < CONSTANT    , 5      >
+;               < SEMICOLON   ,        >
+while           < WHILE       ,        >
+(               < LEFTPAREN   ,        >
+i               < IDENTIFIER  , 2      >
+<               < LESS        ,        >
+n               < IDENTIFIER  , 3      >
+)               < RIGHTPAREN  ,        >
+i               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+i               < IDENTIFIER  , 2      >
++               < PLUS        ,        >
+1               < CONSTANT    , 6      >
+;               < SEMICOLON   ,        >
+i               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+0               < CONSTANT    , 5      >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+
+Symbol table:
+1     main
+2     i
+3     n
+4     10
+5     0
+6     1
+
+Production sequence:
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+DECLARE_FUNC_MID -> ) {
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+IDENTIFIER_S -> IDENTIFIER_S , identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION6 < EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+LOOP_BEGIN -> while ( EXPRESSION )
+STATEMENTS_BEGIN -> {
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION5 + EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT
+STATEMENT -> STATEMENTS_BEGIN STATEMENT_S }
+LOOP -> LOOP_BEGIN STATEMENT
+STATEMENT -> LOOP
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION6 < EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+LOOP_BEGIN -> while ( EXPRESSION )
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION5 + EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+LOOP -> LOOP_BEGIN STATEMENT
+STATEMENT -> LOOP
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE
+PROGRAM -> DECLARE_S
+
+Semantic Symbol Tables:
+
+Global Symbol Table (Table 0):
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | 10           | 0        | 
+    1 | INT          | 0            | 4        | 
+    2 | INT          | 1            | 8        | 
+    3 | BLOCK        | main         | .L6      | Table 1, Params#: 0
+
+Table 1:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | (anonymous)  | 0        | 
+    1 | INT          | i            | 4        | 
+    2 | INT          | n            | 8        | 
+    3 | BLOCK        | (anonymous)  |          | Table 2
+    4 | BLOCK        | (anonymous)  |          | Table 4
+
+Table 2:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | BLOCK        | (anonymous)  |          | Table 3
+
+Table 3:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+
+Table 4:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+
+
+Instruction sequence:
+.L6    ( MOV,   1:2  ,   0:0  ,        )
+       ( MOV,   1:1  ,   0:1  ,        )
+.L0    (  JL,   1:1  ,   1:2  , .L1    )
+       ( JMP,        ,        , .L2    )
+.L1    ( ADD,   1:1  ,   0:2  ,   3:0  )
+       ( MOV,   1:1  ,   3:0  ,        )
+       ( JMP,        ,        , .L0    )
+.L2    ( MOV,   1:1  ,   0:1  ,        )
+.L3    (  JL,   1:1  ,   1:2  , .L4    )
+       ( JMP,        ,        , .L5    )
+.L4    ( ADD,   1:1  ,   0:2  ,   4:0  )
+       ( MOV,   1:1  ,   4:0  ,        )
+       ( JMP,        ,        , .L3    )
+.L5    ( MOV,   1:1  ,   0:1  ,        )
+       ( RET,        ,        ,        )

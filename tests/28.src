@@ -1,0 +1,22 @@
+int input(){}
+int print(int a){}
+
+int main() {
+    int a, b;
+    a = input();
+    b = input(); /* We don't know that whether a < b or not */
+    if(a < b) {
+        int c;
+        c = a;
+        a = b;
+        b = c;
+    }
+    /* Now we are sure that a >= b */
+    while(b > 0) {
+        int r;
+        r = a - a / b * b;
+        a = b;
+        b = r;
+    }
+    print(a);
+}
