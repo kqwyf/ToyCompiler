@@ -289,8 +289,12 @@ int main(int argc, char **argv) {
             printf("%3d:%-3d, ", (*instTable)[i].arg2.table->number, (*instTable)[i].arg2.index);
         if((*instTable)[i].result.index == -1)
             printf("       )\n");
-        else if((*instTable)[i].result.table == NULL)
-            printf(".L%-4d )\n", (*instTable)[i].result.index);
+        else if((*instTable)[i].result.table == NULL) {
+            if((*instTable)[i].op == OP_MOVS || (*instTable)[i].op == OP_MOVT)
+                printf("%-4d   )\n", (*instTable)[i].result.index);
+            else
+                printf(".L%-4d )\n", (*instTable)[i].result.index);
+        }
         else
             printf("%3d:%-3d)\n", (*instTable)[i].result.table->number, (*instTable)[i].result.index);
     }
@@ -301,9 +305,11 @@ void showTable(SymbolTable *table, LexicalSymbolTable *nameTable) {
         printf("Global Symbol Table (Table 0):\n");
     else
         printf("Table %d:\n", table->number);
-    printf("  DataType   |     Name     |  Offset  |    Attr\n");
-    printf("-------------+--------------+----------+------------\n");
+    int index = 0;
+    printf("  #   |   DataType   |     Name     |  Offset  |    Attr\n");
+    printf("------+--------------+--------------+----------+------------\n");
     for(SymbolTable::iterator it = table->begin(); it != table->end(); it++) {
+        printf("%5d | ", index++);
         printf("%-12s | ", DATATYPE_STRING[it->dataType]);
         LexicalSymbolTableEntry &nameEntry = (*nameTable)[it->name];
         if(it->name == 0)
@@ -318,6 +324,8 @@ void showTable(SymbolTable *table, LexicalSymbolTable *nameTable) {
             printf(".L%-6d | ", it->offset);
         else if(it->dataType == DT_BLOCK)
             printf("         | ");
+        else if(it->dataType == DT_STRUCT_DEF)
+            printf("[%-6d] | ", it->offset);
         else
             printf("%-8d | ", it->offset);
         if(it->dataType == DT_ARRAY) {

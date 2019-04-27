@@ -160,6 +160,7 @@ class SymbolTable : public vector<SymbolTableEntry> {
         SymbolTableEntryRef newTemp(SymbolDataType dataType, int size);
         void freeTemp();
         SymbolTableEntryRef findSymbol(int name);
+        bool existsSymbol(int name);
         int number;
         int tempCount;
         int offset;

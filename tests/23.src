@@ -1,0 +1,21 @@
+int a, b;
+struct end {
+    int first;
+    bool second;
+};
+float c, d;
+
+int main() {
+    struct mainstr {
+        bool m;
+        float n;
+        int p;
+        int q;
+    };
+    struct mainstr a, b;
+    struct end c;
+    a.n = 1.0;
+    a.p = 3;
+    b = a;
+    d = c.first;
+}

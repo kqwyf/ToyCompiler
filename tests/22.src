@@ -1,0 +1,25 @@
+int a; float b; bool c;
+
+float f(float a, bool b, int c) {
+    c = a;
+    a = b;
+}
+
+int d;
+bool e;
+
+int main() {
+    bool a;
+    a = (1 == 1);
+
+    int b;
+    float c;
+    b = 1.0;
+    c = 1;
+    f(c, a, b);
+    int d;
+    d = 1;
+}
+
+float g;
+

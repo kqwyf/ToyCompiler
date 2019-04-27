@@ -1,0 +1,394 @@
+Token sequence:
+int             < INT         ,        >
+a               < IDENTIFIER  , 1      >
+;               < SEMICOLON   ,        >
+float           < FLOAT       ,        >
+b               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+bool            < BOOL        ,        >
+c               < IDENTIFIER  , 3      >
+;               < SEMICOLON   ,        >
+float           < FLOAT       ,        >
+f               < IDENTIFIER  , 4      >
+(               < LEFTPAREN   ,        >
+float           < FLOAT       ,        >
+a               < IDENTIFIER  , 1      >
+,               < COMMA       ,        >
+bool            < BOOL        ,        >
+b               < IDENTIFIER  , 2      >
+,               < COMMA       ,        >
+int             < INT         ,        >
+c               < IDENTIFIER  , 3      >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+c               < IDENTIFIER  , 3      >
+=               < ASSIGN      ,        >
+a               < IDENTIFIER  , 1      >
+;               < SEMICOLON   ,        >
+a               < IDENTIFIER  , 1      >
+=               < ASSIGN      ,        >
+b               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+int             < INT         ,        >
+d               < IDENTIFIER  , 5      >
+;               < SEMICOLON   ,        >
+bool            < BOOL        ,        >
+e               < IDENTIFIER  , 6      >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+main            < IDENTIFIER  , 7      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+bool            < BOOL        ,        >
+a               < IDENTIFIER  , 1      >
+;               < SEMICOLON   ,        >
+a               < IDENTIFIER  , 1      >
+=               < ASSIGN      ,        >
+(               < LEFTPAREN   ,        >
+1               < CONSTANT    , 8      >
+==              < EQUAL       ,        >
+1               < CONSTANT    , 8      >
+)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+b               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+float           < FLOAT       ,        >
+c               < IDENTIFIER  , 3      >
+;               < SEMICOLON   ,        >
+b               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+1.0             < CONSTANT    , 9      >
+;               < SEMICOLON   ,        >
+c               < IDENTIFIER  , 3      >
+=               < ASSIGN      ,        >
+1               < CONSTANT    , 8      >
+;               < SEMICOLON   ,        >
+f               < IDENTIFIER  , 4      >
+(               < LEFTPAREN   ,        >
+c               < IDENTIFIER  , 3      >
+,               < COMMA       ,        >
+a               < IDENTIFIER  , 1      >
+,               < COMMA       ,        >
+b               < IDENTIFIER  , 2      >
+)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+d               < IDENTIFIER  , 5      >
+;               < SEMICOLON   ,        >
+d               < IDENTIFIER  , 5      >
+=               < ASSIGN      ,        >
+1               < CONSTANT    , 8      >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+float           < FLOAT       ,        >
+g               < IDENTIFIER  , 10     >
+;               < SEMICOLON   ,        >
+
+Symbol table:
+1     a
+2     b
+3     c
+4     f
+5     d
+6     e
+7     main
+8     1
+9     1.000000
+10    g
+
+Production sequence:
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE
+TYPE_BASIC -> float
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> bool
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> float
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+TYPE_BASIC -> float
+TYPE -> TYPE_BASIC
+PARAMETERS -> TYPE identifier
+TYPE_BASIC -> bool
+TYPE -> TYPE_BASIC
+PARAMETERS -> PARAMETERS , TYPE identifier
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+PARAMETERS -> PARAMETERS , TYPE identifier
+DECLARE_FUNC_MID -> PARAMETERS ) {
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> bool
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+DECLARE_FUNC_MID -> ) {
+TYPE_BASIC -> bool
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION6 == EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+EXPRESSION2 -> ( EXPRESSION )
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT_S STATEMENT
+TYPE_BASIC -> float
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+EXPRESSION_S -> EXPRESSION
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+EXPRESSION_S -> EXPRESSION_S , EXPRESSION
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+EXPRESSION_S -> EXPRESSION_S , EXPRESSION
+EXPRESSION1 -> identifier ( EXPRESSION_S )
+EXPRESSION2 -> EXPRESSION1
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> float
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE -> DECLARE_VAR
+DECLARE_S -> DECLARE_S DECLARE
+PROGRAM -> DECLARE_S
+
+Semantic Symbol Tables:
+
+Global Symbol Table (Table 0):
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | 1            | 0        | 
+    1 | FLOAT        | 1.000000     | 4        | 
+    2 | INT          | a            | 12       | 
+    3 | FLOAT        | b            | 16       | 
+    4 | BOOL         | c            | 24       | 
+    5 | BLOCK        | f            | .L0      | Table 1, Params#: 3
+    6 | INT          | d            | 25       | 
+    7 | BOOL         | e            | 29       | 
+    8 | BLOCK        | main         | .L5      | Table 2, Params#: 0
+    9 | FLOAT        | g            | 30       | 
+
+Table 1:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | FLOAT        | (anonymous)  | 0        | 
+    1 | FLOAT        | a            | 8        | 
+    2 | BOOL         | b            | 16       | 
+    3 | INT          | c            | 17       | 
+
+Table 2:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | (anonymous)  | 0        | 
+    1 | BOOL         | a            | 4        | 
+    2 | INT          | b            | 5        | 
+    3 | FLOAT        | c            | 9        | 
+    4 | INT          | d            | 17       | 
+
+
+Instruction sequence:
+.L0    ( MOV,   1:3  ,   1:1  ,        )
+       ( MOV,   1:1  ,   1:2  ,        )
+       ( RET,        ,        ,        )
+.L5    (  JE,   0:0  ,   0:0  , .L2    )
+       ( JMP,        ,        , .L3    )
+.L2    ( TRU,        ,        ,   2:2  )
+       ( JMP,        ,        , .L1    )
+.L3    ( FAL,        ,        ,   2:2  )
+.L1    ( MOV,   2:1  ,   2:2  ,        )
+       ( JNZ,   2:1  ,        , .L4    )
+       ( JMP,        ,        , .L4    )
+.L4    ( MOV,   2:2  ,   0:1  ,        )
+       ( MOV,   2:3  ,   0:0  ,        )
+       ( PAR,        ,        ,   2:3  )
+       ( PAR,        ,        ,   2:1  )
+       ( PAR,        ,        ,   2:2  )
+       (CALL,   2:4  ,        , .L0    )
+       ( MOV,   2:4  ,   0:0  ,        )
+       ( RET,        ,        ,        )

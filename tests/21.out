@@ -148,29 +148,29 @@ PROGRAM -> DECLARE_S
 Semantic Symbol Tables:
 
 Global Symbol Table (Table 0):
-  DataType   |     Name     |  Offset  |    Attr
--------------+--------------+----------+------------
-BLOCK        | input        | .L0      | Table 1, Params#: 0
-BLOCK        | print        | .L1      | Table 2, Params#: 1
-BLOCK        | main         | .L2      | Table 3, Params#: 0
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | BLOCK        | input        | .L0      | Table 1, Params#: 0
+    1 | BLOCK        | print        | .L1      | Table 2, Params#: 1
+    2 | BLOCK        | main         | .L2      | Table 3, Params#: 0
 
 Table 1:
-  DataType   |     Name     |  Offset  |    Attr
--------------+--------------+----------+------------
-INT          | (anonymous)  | 0        | 
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | (anonymous)  | 0        | 
 
 Table 2:
-  DataType   |     Name     |  Offset  |    Attr
--------------+--------------+----------+------------
-INT          | (anonymous)  | 0        | 
-INT          | a            | 4        | 
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | (anonymous)  | 0        | 
+    1 | INT          | a            | 4        | 
 
 Table 3:
-  DataType   |     Name     |  Offset  |    Attr
--------------+--------------+----------+------------
-INT          | (anonymous)  | 0        | 
-INT          | a            | 4        | 
-INT          | b            | 8        | 
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | (anonymous)  | 0        | 
+    1 | INT          | a            | 4        | 
+    2 | INT          | b            | 8        | 
 
 
 Instruction sequence:
