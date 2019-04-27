@@ -62,6 +62,7 @@ const char *(lexicalTypeString[]) = {
     "LEFTBRACE",
     "RIGHTBRACE",
     "CONSTANT",
+    "RETURN",
     "COMMENT"
 };
 
@@ -268,35 +269,36 @@ int main(int argc, char **argv) {
 #endif
         return 0;
     }
-    if(err) putchar('\n');
-    printf("\nSemantic Symbol Tables:\n\n");
-    for(list<SymbolTable*>::iterator it = SymbolTable::tables.begin(); it != SymbolTable::tables.end(); it++)
-        showTable(*it, symbolTable);
-    printf("\nInstruction sequence:\n");
-    for(unsigned long i = 0; i < instTable->size(); i++) {
-        if((*instTable)[i].label >= 0)
-            printf(".L%-4d ", (*instTable)[i].label);
-        else
-            printf("       ");
-        printf("(%4s, ", OPCODE_STRING[(*instTable)[i].op]);
-        if((*instTable)[i].arg1.index == -1)
-            printf("       , ");
-        else
-            printf("%3d:%-3d, ", (*instTable)[i].arg1.table->number, (*instTable)[i].arg1.index);
-        if((*instTable)[i].arg2.index == -1)
-            printf("       , ");
-        else
-            printf("%3d:%-3d, ", (*instTable)[i].arg2.table->number, (*instTable)[i].arg2.index);
-        if((*instTable)[i].result.index == -1)
-            printf("       )\n");
-        else if((*instTable)[i].result.table == NULL) {
-            if((*instTable)[i].op == OP_MOVS || (*instTable)[i].op == OP_MOVT)
-                printf("%-4d   )\n", (*instTable)[i].result.index);
+    if(!err) {
+        printf("\nSemantic Symbol Tables:\n\n");
+        for(list<SymbolTable*>::iterator it = SymbolTable::tables.begin(); it != SymbolTable::tables.end(); it++)
+            showTable(*it, symbolTable);
+        printf("\nInstruction sequence:\n");
+        for(unsigned long i = 0; i < instTable->size(); i++) {
+            if((*instTable)[i].label >= 0)
+                printf(".L%-4d ", (*instTable)[i].label);
             else
-                printf(".L%-4d )\n", (*instTable)[i].result.index);
+                printf("       ");
+            printf("(%4s, ", OPCODE_STRING[(*instTable)[i].op]);
+            if((*instTable)[i].arg1.index == -1)
+                printf("       , ");
+            else
+                printf("%3d:%-3d, ", (*instTable)[i].arg1.table->number, (*instTable)[i].arg1.index);
+            if((*instTable)[i].arg2.index == -1)
+                printf("       , ");
+            else
+                printf("%3d:%-3d, ", (*instTable)[i].arg2.table->number, (*instTable)[i].arg2.index);
+            if((*instTable)[i].result.index == -1)
+                printf("       )\n");
+            else if((*instTable)[i].result.table == NULL) {
+                if((*instTable)[i].op == OP_MOVS || (*instTable)[i].op == OP_MOVT)
+                    printf("%-4d   )\n", (*instTable)[i].result.index);
+                else
+                    printf(".L%-4d )\n", (*instTable)[i].result.index);
+            }
+            else
+                printf("%3d:%-3d)\n", (*instTable)[i].result.table->number, (*instTable)[i].result.index);
         }
-        else
-            printf("%3d:%-3d)\n", (*instTable)[i].result.table->number, (*instTable)[i].result.index);
     }
 }
 

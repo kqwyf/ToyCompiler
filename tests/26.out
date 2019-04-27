@@ -65,7 +65,7 @@ Production sequence:
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
 DECLARE_FUNC_BEGIN -> TYPE identifier (
-DECLARE_FUNC_MID -> ) {
+DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN ) {
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
 IDENTIFIER_S -> identifier
@@ -218,7 +218,7 @@ EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
 EXPRESSION -> EXPRESSION8
 STATEMENT -> EXPRESSION ;
 STATEMENT_S -> STATEMENT_S STATEMENT
-DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
 DECLARE -> DECLARE_FUNC
 DECLARE_S -> DECLARE
 PROGRAM -> DECLARE_S
@@ -231,7 +231,7 @@ Global Symbol Table (Table 0):
     0 | INT          | 10           | 0        | 
     1 | INT          | 0            | 4        | 
     2 | INT          | 1            | 8        | 
-    3 | BLOCK        | main         | .L6      | Table 1, Params#: 0
+    3 | BLOCK        | main         | .L0      | Table 1, Params#: 0
 
 Table 1:
   #   |   DataType   |     Name     |  Offset  |    Attr
@@ -257,18 +257,18 @@ Table 4:
 
 
 Instruction sequence:
-.L6    ( MOV,   1:2  ,   0:0  ,        )
+.L0    ( MOV,   1:2  ,   0:0  ,        )
        ( MOV,   1:1  ,   0:1  ,        )
-.L0    (  JL,   1:1  ,   1:2  , .L1    )
-       ( JMP,        ,        , .L2    )
-.L1    ( ADD,   1:1  ,   0:2  ,   3:0  )
-       ( MOV,   1:1  ,   3:0  ,        )
-       ( JMP,        ,        , .L0    )
-.L2    ( MOV,   1:1  ,   0:1  ,        )
-.L3    (  JL,   1:1  ,   1:2  , .L4    )
-       ( JMP,        ,        , .L5    )
-.L4    ( ADD,   1:1  ,   0:2  ,   4:0  )
-       ( MOV,   1:1  ,   4:0  ,        )
+.L1    (  JL,   1:1  ,   1:2  , .L2    )
        ( JMP,        ,        , .L3    )
-.L5    ( MOV,   1:1  ,   0:1  ,        )
+.L2    ( ADD,   1:1  ,   0:2  ,   3:0  )
+       ( MOV,   1:1  ,   3:0  ,        )
+       ( JMP,        ,        , .L1    )
+.L3    ( MOV,   1:1  ,   0:1  ,        )
+.L4    (  JL,   1:1  ,   1:2  , .L5    )
+       ( JMP,        ,        , .L6    )
+.L5    ( ADD,   1:1  ,   0:2  ,   4:0  )
+       ( MOV,   1:1  ,   4:0  ,        )
+       ( JMP,        ,        , .L4    )
+.L6    ( MOV,   1:1  ,   0:1  ,        )
        ( RET,        ,        ,        )

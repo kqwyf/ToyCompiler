@@ -67,7 +67,7 @@ Production sequence:
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
 DECLARE_FUNC_BEGIN -> TYPE identifier (
-DECLARE_FUNC_MID -> ) {
+DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN ) {
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
 IDENTIFIER_S -> identifier
@@ -203,7 +203,7 @@ STATEMENT -> EXPRESSION ;
 SELECT -> SELECT_BEGIN STATEMENT
 STATEMENT -> SELECT
 STATEMENT_S -> STATEMENT_S STATEMENT
-DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
 DECLARE -> DECLARE_FUNC
 DECLARE_S -> DECLARE
 PROGRAM -> DECLARE_S
@@ -213,7 +213,7 @@ Semantic Symbol Tables:
 Global Symbol Table (Table 0):
   #   |   DataType   |     Name     |  Offset  |    Attr
 ------+--------------+--------------+----------+------------
-    0 | BLOCK        | main         | .L4      | Table 1, Params#: 0
+    0 | BLOCK        | main         | .L0      | Table 1, Params#: 0
 
 Table 1:
   #   |   DataType   |     Name     |  Offset  |    Attr
@@ -236,18 +236,18 @@ Table 3:
 
 
 Instruction sequence:
-.L4    ( ADD,   1:2  ,   1:3  ,   1:5  )
+.L0    ( ADD,   1:2  ,   1:3  ,   1:5  )
        ( MOV,   1:1  ,   1:5  ,        )
        ( SUB,   1:1  ,   1:4  ,   1:5  )
        ( MOV,   1:2  ,   1:5  ,        )
        ( ADD,   1:1  ,   1:2  ,   1:5  )
-       (  JG,   1:5  ,   1:3  , .L0    )
-       ( JMP,        ,        , .L2    )
-.L0    ( MUL,   1:2  ,   1:3  ,   2:0  )
-       ( MOV,   1:3  ,   2:0  ,        )
-.L2    ( MUL,   1:3  ,   1:4  ,   1:6  )
-       (  JL,   1:6  ,   1:1  , .L1    )
+       (  JG,   1:5  ,   1:3  , .L1    )
        ( JMP,        ,        , .L3    )
-.L1    ( DIV,   1:4  ,   1:1  ,   3:0  )
+.L1    ( MUL,   1:2  ,   1:3  ,   2:0  )
+       ( MOV,   1:3  ,   2:0  ,        )
+.L3    ( MUL,   1:3  ,   1:4  ,   1:6  )
+       (  JL,   1:6  ,   1:1  , .L2    )
+       ( JMP,        ,        , .L4    )
+.L2    ( DIV,   1:4  ,   1:1  ,   3:0  )
        ( MOV,   1:4  ,   3:0  ,        )
-.L3    ( RET,        ,        ,        )
+.L4    ( RET,        ,        ,        )

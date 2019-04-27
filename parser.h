@@ -38,6 +38,7 @@ struct IdsInfo;
 struct IdInfo;
 struct SelBeginInfo;
 struct LoopBeginInfo;
+struct FuncBeginInfo;
 struct FuncInfo;
 struct ArrayInfo;
 struct ConstInfo;
@@ -58,10 +59,11 @@ union ExternalAttribute {
     IdInfo *id; // IDENTIFIER
     SelBeginInfo *sel_b; // SELECT_BEGIN
     LoopBeginInfo *loop_b; // LOOP_BEGIN
+    FuncBeginInfo *func_b; // DECLARE_FUNC_BEGIN
     ConstInfo *con; // CONSTANT
     TypeInfo *typ; // TYPE, TYPE_BASIC, TYPE_ARRAY
     TypeStructInfo *typ_str; // TYPE_STRUCT
-    int pCount; // PARAMETERS, DECLARE_FUNC_MID
+    int pCount; // PARAMETERS
 };
 
 class GrammaSymbol {
@@ -103,6 +105,10 @@ struct SelBeginInfo {
 struct LoopBeginInfo {
     list<int> trueList;
     list<int> falseList;
+};
+
+struct FuncBeginInfo {
+    SymbolTableEntryRef ref;
 };
 
 struct FuncInfo {
@@ -155,7 +161,7 @@ struct SymbolTableEntry {
 
 class SymbolTable : public vector<SymbolTableEntry> {
     public:
-        SymbolTable(SymbolTable *parent);
+        SymbolTable(SymbolTable *parent, bool isFunc);
         SymbolTableEntryRef newSymbol(int name, int type, SymbolDataType dataType, int size);
         SymbolTableEntryRef newTemp(SymbolDataType dataType, int size);
         void freeTemp();
@@ -166,6 +172,7 @@ class SymbolTable : public vector<SymbolTableEntry> {
         int offset;
         bool busy;
         SymbolTable *parent;
+        SymbolTable *funcTable;
         TempSymbolTable *tempTable;
         map<int, int> nameMap;
         static list<SymbolTable*> tables;
@@ -194,6 +201,7 @@ class InstTable : public vector<Inst> {
         int gen(OpCode op, const SymbolTableEntryRef &arg1, const SymbolTableEntryRef &arg2, const SymbolTableEntryRef &result);
         void backPatch(list<int> &l, int label);
         int newLabel(int index);
+        void fillLabel(int code, int label);
         vector<int> labelTable;
 };
 

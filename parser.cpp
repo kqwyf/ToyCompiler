@@ -2,7 +2,6 @@
 // TODO: add auto type conversion
 // TODO: add nested struct support (production #54)
 // TODO: when id.id is reduced as a right-value, allocate a temp symbol for it
-// TODO: add return statement
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -52,6 +51,7 @@ pair<int, int> evalBoolExp(ExpInfo *exp, int next);
 pair<int, int> genBoolJmpCode();
 bool typeMatch(ExpInfo *lexp, ExpInfo *rexp);
 bool typeMatch(SymbolDataType ldataType, ExpInfo *rexp);
+bool typeMatch(SymbolTableEntryRef &lref, ExpInfo *rexp);
 
 #ifdef PRINT_PRODUCTIONS
 int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTable *iTable, ProductionSequence &seq) {
@@ -60,7 +60,7 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
 #endif
     if(iTable != NULL) { // semantic analysis mode
         nameTable = lexicalSymbolTable;
-        SymbolTable::global = new SymbolTable(NULL);
+        SymbolTable::global = new SymbolTable(NULL, false);
         instTable = new InstTable();
         enterTable(SymbolTable::global);
         for(unsigned long i = 1; i < nameTable->size(); i++) {
@@ -77,6 +77,7 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
     GrammaSymbol endSymbol = GrammaSymbol(/*code=*/-1, /*end=*/-1, /*type=*/END_SYMBOL);
     push(INIT_STATE, endSymbol);
     int i = 0;
+    int returnCode = 0;
     while((unsigned long)i <= tokenTable.size() && !stack->empty()) {
 #ifdef DEBUG
         //printStack();
@@ -134,6 +135,7 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
                 if(iTable != NULL) { // semantic analysis mode
                     int SAerr = semanticActions[pro](sym); // -2 for compile error
                     if(SAerr == -1) return -1;             // -1 for internal error
+                    if(SAerr == -2) returnCode = -2;
                 }
                 pop(PRO_LENGTH[pro]);
                 int stat = GOTO[current()][sym.type];
@@ -146,6 +148,7 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
             break;
         } else {
             err = true;
+            returnCode = -2;
         }
         if(err) {
             printf(GRAMMA_ERROR_MESSAGE[current()], row, col, entry.source);
@@ -190,7 +193,7 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
         }
     }
     delete stack;
-    return 0;
+    return returnCode;
 }
 
 void push(int stat, GrammaSymbol sym) {
@@ -496,6 +499,15 @@ bool typeMatch(SymbolDataType ldataType, ExpInfo *rexp) {
     return result;
 }
 
+bool typeMatch(SymbolTableEntryRef &lref, ExpInfo *rexp) {
+    ExpInfo exp;
+    exp.ref = lref;
+    exp.offset = -1;
+    exp.ndim = 0;
+    bool result = typeMatch(&exp, rexp);
+    return result;
+}
+
 GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
                                                           end(end),
                                                           type(type) {
@@ -511,6 +523,8 @@ GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
         this->attr.sel_b = new SelBeginInfo();
     else if(type == LOOP_BEGIN)
         this->attr.loop_b = new LoopBeginInfo();
+    else if(type == DECLARE_FUNC_BEGIN)
+        this->attr.func_b = new FuncBeginInfo();
     else if(type == CONSTANT)
         this->attr.con = new ConstInfo();
     else if(type == TYPE || type == TYPE_BASIC || type == TYPE_ARRAY)
@@ -521,13 +535,19 @@ GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
 
 AnalyserStackItem::AnalyserStackItem(int stat, GrammaSymbol sym) : stat(stat), sym(sym) {}
 
-SymbolTable::SymbolTable(SymbolTable *parent) : number(SymbolTable::n++),
-                                                tempCount(0),
-                                                offset(0),
-                                                busy(false),
-                                                parent(parent) {
+SymbolTable::SymbolTable(SymbolTable *parent, bool isFunc) : number(SymbolTable::n++),
+                                                             tempCount(0),
+                                                             offset(0),
+                                                             busy(false),
+                                                             parent(parent) {
     // this->tempTable = new TempSymbolTable(this); // TODO: check if temp table is necessary
     tables.push_back(this);
+    if(isFunc)
+        this->funcTable = this;
+    else if(parent != NULL)
+        this->funcTable = parent->funcTable;
+    else
+        this->funcTable = NULL;
 }
 
 SymbolTableEntryRef SymbolTable::newSymbol(int name, int type, SymbolDataType dataType, int size) {
@@ -609,12 +629,21 @@ void InstTable::backPatch(list<int> &l, int label) {
 }
 
 int InstTable::newLabel(int index) {
-    if((*this)[index].label >= 0)
+    if(index >= 0 && (*this)[index].label >= 0)
         return (*this)[index].label;
     int result = this->labelTable.size();
     this->labelTable.push_back(index);
-    (*this)[index].label = result;
+    if(index >= 0) // label is pre-allocated (when declaring functions) if index < 0
+        (*this)[index].label = result;
     return result;
+}
+
+/**
+ * Fill the pre-allocated label.
+ */
+void InstTable::fillLabel(int code, int label) {
+    this->labelTable[label] = code;
+    (*this)[code].label = label;
 }
 
 /*****************************
@@ -731,8 +760,48 @@ int SA_7(GrammaSymbol &sym) {
     return 0;
 }
 
-// STATEMENT -> EXPRESSION ;
+// STATEMENT -> return EXPRESSION ;
 int SA_8(GrammaSymbol &sym) {
+#ifdef DEBUG
+    fprintf(stderr, "[DEBUG] STATEMENT -> return EXPRESSION ;\n");
+#endif
+    int n = stack->size();
+    GrammaSymbol expression = (*stack)[n - 2].sym;
+    sym.code = expression.code;
+    sym.end = expression.end;
+    if(expression.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    SymbolTableEntryRef ref = {symbolTable->funcTable, 0};
+    if(!typeMatch(ref, expression.attr.exp)) {
+        printf("Line %d, Col %d: Return value doesn't match the return type.\n", row, col);
+        return -2;
+    }
+    int retCode = instTable->gen(OP_RET, NULL_REF, NULL_REF, NULL_REF);
+    if((*ref.table)[0].dataType == DT_BOOL && expression.attr.exp->isTemp) {
+        pair<int, int> boolCode = evalBoolExp(expression.attr.exp, retCode);
+        link(sym, boolCode.first);
+        sym.end = boolCode.second;
+        if(!expression.nextList.empty()) {
+            int boolLabel = instTable->newLabel(boolCode.first);
+            instTable->backPatch(expression.nextList, boolLabel);
+        }
+    }
+    int movCode = -1;
+    if(expression.attr.exp->offset >= 0)
+        movCode = instTable->gen(OP_MOVS, ref, expression.attr.exp->ref, {NULL, expression.attr.exp->offset});
+    else
+        movCode = instTable->gen(OP_MOV, ref, expression.attr.exp->ref, NULL_REF);
+    if(!expression.nextList.empty()) {
+        int movLabel = instTable->newLabel(movCode);
+        instTable->backPatch(expression.nextList, movLabel);
+    }
+    link(sym, movCode);
+    link(sym, retCode);
+    return 0;
+}
+
+// STATEMENT -> EXPRESSION ;
+int SA_9(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] STATEMENT -> EXPRESSION ;\n");
 #endif
@@ -749,7 +818,7 @@ int SA_8(GrammaSymbol &sym) {
 }
 
 // STATEMENT -> STATEMENTS_BEGIN STATEMENT_S }
-int SA_9(GrammaSymbol &sym) {
+int SA_10(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] STATEMENT -> STATEMENTS_BEGIN STATEMENT_S }\n");
 #endif
@@ -763,7 +832,7 @@ int SA_9(GrammaSymbol &sym) {
 }
 
 // STATEMENT -> { }
-int SA_10(GrammaSymbol &sym) {
+int SA_11(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] STATEMENT -> { }\n");
 #endif
@@ -772,20 +841,20 @@ int SA_10(GrammaSymbol &sym) {
 }
 
 // STATEMENTS_BEGIN -> {
-int SA_11(GrammaSymbol &sym) {
+int SA_12(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] STATEMENTS_BEGIN -> {\n");
 #endif
     sym.code = sym.end = -1;
     SymbolTableEntryRef ref = symbolTable->newSymbol(0, IDENTIFIER, DT_BLOCK, 0);
-    SymbolTable *table = new SymbolTable(symbolTable);
+    SymbolTable *table = new SymbolTable(symbolTable, false);
     (*ref.table)[ref.index].attr.table = table;
     enterTable(table);
     return 0;
 }
 
 // DECLARE_S -> DECLARE_S DECLARE
-int SA_12(GrammaSymbol &sym) {
+int SA_13(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE_S -> DECLARE_S DECLARE\n");
 #endif
@@ -799,7 +868,7 @@ int SA_12(GrammaSymbol &sym) {
 }
 
 // DECLARE_S -> DECLARE
-int SA_13(GrammaSymbol &sym) {
+int SA_14(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE_S -> DECLARE\n");
 #endif
@@ -811,7 +880,7 @@ int SA_13(GrammaSymbol &sym) {
 }
 
 // DECLARE -> DECLARE_VAR
-int SA_14(GrammaSymbol &sym) {
+int SA_15(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE -> DECLARE_VAR\n");
 #endif
@@ -820,7 +889,7 @@ int SA_14(GrammaSymbol &sym) {
 }
 
 // DECLARE -> DECLARE_STRUCT
-int SA_15(GrammaSymbol &sym) {
+int SA_16(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE -> DECLARE_STRUCT\n");
 #endif
@@ -829,7 +898,7 @@ int SA_15(GrammaSymbol &sym) {
 }
 
 // DECLARE -> DECLARE_FUNC
-int SA_16(GrammaSymbol &sym) {
+int SA_17(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE -> DECLARE_FUNC\n");
 #endif
@@ -841,7 +910,7 @@ int SA_16(GrammaSymbol &sym) {
 }
 
 // DECLARE_VAR -> TYPE IDENTIFIER_S ;
-int SA_17(GrammaSymbol &sym) {
+int SA_18(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE_VAR -> TYPE IDENTIFIER_S ;\n");
 #endif
@@ -876,7 +945,7 @@ int SA_17(GrammaSymbol &sym) {
 }
 
 // DECLARE_VAR_S -> DECLARE_VAR_S DECLARE_VAR
-int SA_18(GrammaSymbol &sym) {
+int SA_19(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE_VAR_S -> DECLARE_VAR_S DECLARE_VAR\n");
 #endif
@@ -885,7 +954,7 @@ int SA_18(GrammaSymbol &sym) {
 }
 
 // DECLARE_VAR_S -> DECLARE_VAR
-int SA_19(GrammaSymbol &sym) {
+int SA_20(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE_VAR_S -> DECLARE_VAR\n");
 #endif
@@ -894,7 +963,7 @@ int SA_19(GrammaSymbol &sym) {
 }
 
 // DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_VAR_S } ;
-int SA_20(GrammaSymbol &sym) {
+int SA_21(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_VAR_S } ;\n");
 #endif
@@ -906,7 +975,7 @@ int SA_20(GrammaSymbol &sym) {
 }
 
 // DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
-int SA_21(GrammaSymbol &sym) {
+int SA_22(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {\n");
 #endif
@@ -919,19 +988,18 @@ int SA_21(GrammaSymbol &sym) {
         return -2;
     }
     SymbolTableEntryRef ref = symbolTable->newSymbol(name, IDENTIFIER, DT_STRUCT_DEF, 0);
-    SymbolTable *table = new SymbolTable(symbolTable);
+    SymbolTable *table = new SymbolTable(symbolTable, false);
     (*ref.table)[ref.index].attr.table = table;
     enterTable(table);
     return 0;
 }
 
-// DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
-int SA_22(GrammaSymbol &sym) {
+// DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
+int SA_23(GrammaSymbol &sym) {
 #ifdef DEBUG
-    fprintf(stderr, "[DEBUG] DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }\n");
+    fprintf(stderr, "[DEBUG] DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }\n");
 #endif
     int n = stack->size();
-    GrammaSymbol declare_func_mid = (*stack)[n - 3].sym;
     GrammaSymbol statement_s = (*stack)[n - 2].sym;
     sym.code = statement_s.code;
     sym.end = statement_s.end;
@@ -942,82 +1010,46 @@ int SA_22(GrammaSymbol &sym) {
         instTable->backPatch(statement_s.nextList, label);
     }
     quitTable();
-    int label = instTable->newLabel(sym.code);
-    symbolTable->back().offset = label; // the back element of the symbol table must be the symbol of this function at this time
-    symbolTable->back().attr.func->pCount = declare_func_mid.attr.pCount;
+    instTable->fillLabel(sym.code, symbolTable->back().offset); // the back element of the symbol table must be the symbol of this function at this time
     return 0;
 }
 
-// DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID }
-int SA_23(GrammaSymbol &sym) {
+// DECLARE_FUNC -> DECLARE_FUNC_SIGN }
+int SA_24(GrammaSymbol &sym) {
 #ifdef DEBUG
-    fprintf(stderr, "[DEBUG] DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID }\n");
+    fprintf(stderr, "[DEBUG] DECLARE_FUNC -> DECLARE_FUNC_SIGN }\n");
 #endif
-    int n = stack->size();
-    GrammaSymbol declare_func_mid = (*stack)[n - 2].sym;
     int code = instTable->gen(OP_RET, NULL_REF, NULL_REF, NULL_REF);
     sym.code = sym.end = code;
     quitTable();
-    int label = instTable->newLabel(sym.code);
-    symbolTable->back().offset = label;
-    symbolTable->back().attr.func->pCount = declare_func_mid.attr.pCount;
+    instTable->fillLabel(sym.code, symbolTable->back().offset);
     return 0;
 }
 
-// DECLARE_FUNC_BEGIN -> TYPE identifier (
-int SA_24(GrammaSymbol &sym) {
-#ifdef DEBUG
-    fprintf(stderr, "[DEBUG] DECLARE_FUNC_BEGIN -> TYPE identifier (\n");
-#endif
-    int n = stack->size();
-    GrammaSymbol type = (*stack)[n - 3].sym;
-    GrammaSymbol identifier = (*stack)[n - 2].sym;
-    sym.code = sym.end = -1;
-    if(symbolTable->existsSymbol(identifier.attr.id->name)) {
-        printf("Line %d, Col %d: Identifier has been declared before: %s\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
-        return -2;
-    }
-    SymbolTableEntryRef ref = symbolTable->newSymbol(identifier.attr.id->name, IDENTIFIER, DT_BLOCK, 0);
-    SymbolTable *table = new SymbolTable(symbolTable);
-    (*ref.table)[ref.index].attr.func = new FuncInfo();
-    (*ref.table)[ref.index].attr.func->table = table;
-    enterTable(table);
-    int size = sizeOf(type.attr.typ);
-    if(size == 0) {
-#ifdef DEBUG
-        fprintf(stderr, "[ERROR] Invalid return type in function definition.\n");
-#endif
-        return -1;
-    } else if(size < 0) {
-        return size;
-    }
-    ref = table->newSymbol(0, IDENTIFIER, type.attr.typ->dataType, size); // return value symbol
-    if(type.attr.typ->dataType == DT_ARRAY)
-        (*ref.table)[ref.index].attr.arr = type.attr.typ->attr.arr;
-    else if(type.attr.typ->dataType == DT_STRUCT)
-        (*ref.table)[ref.index].attr.table = type.attr.typ->attr.table;
-    return 0;
-}
-
-// DECLARE_FUNC_MID -> PARAMETERS ) {
+// DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN PARAMETERS ) {
 int SA_25(GrammaSymbol &sym) {
 #ifdef DEBUG
-    fprintf(stderr, "[DEBUG] DECLARE_FUNC_MID -> PARAMETERS ) {\n");
+    fprintf(stderr, "[DEBUG] DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN PARAMETERS ) {\n");
 #endif
     int n = stack->size();
     GrammaSymbol parameters = (*stack)[n - 3].sym;
+    GrammaSymbol declare_func_begin = (*stack)[n - 4].sym;
     sym.code = sym.end = -1;
-    sym.attr.pCount = parameters.attr.pCount;
+    SymbolTableEntryRef ref = declare_func_begin.attr.func_b->ref;
+    (*ref.table)[ref.index].attr.func->pCount = parameters.attr.pCount;
     return 0;
 }
 
-// DECLARE_FUNC_MID -> ) {
+// DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN ) {
 int SA_26(GrammaSymbol &sym) {
 #ifdef DEBUG
-    fprintf(stderr, "[DEBUG] DECLARE_FUNC_MID -> ) {\n");
+    fprintf(stderr, "[DEBUG] DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN ) {\n");
 #endif
+    int n = stack->size();
+    GrammaSymbol declare_func_begin = (*stack)[n - 3].sym;
     sym.code = sym.end = -1;
-    sym.attr.pCount = 0;
+    SymbolTableEntryRef ref = declare_func_begin.attr.func_b->ref;
+    (*ref.table)[ref.index].attr.func->pCount = 0;
     return 0;
 }
 
@@ -1077,8 +1109,45 @@ int SA_28(GrammaSymbol &sym) {
     return 0;
 }
 
-// TYPE -> TYPE_BASIC
+// DECLARE_FUNC_BEGIN -> TYPE identifier (
 int SA_29(GrammaSymbol &sym) {
+#ifdef DEBUG
+    fprintf(stderr, "[DEBUG] DECLARE_FUNC_BEGIN -> TYPE identifier (\n");
+#endif
+    int n = stack->size();
+    GrammaSymbol type = (*stack)[n - 3].sym;
+    GrammaSymbol identifier = (*stack)[n - 2].sym;
+    sym.code = sym.end = -1;
+    if(symbolTable->existsSymbol(identifier.attr.id->name)) {
+        printf("Line %d, Col %d: Identifier has been declared before: %s\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
+        return -2;
+    }
+    SymbolTableEntryRef ref = symbolTable->newSymbol(identifier.attr.id->name, IDENTIFIER, DT_BLOCK, 0);
+    sym.attr.func_b->ref = ref;
+    SymbolTable *table = new SymbolTable(symbolTable, true);
+    (*ref.table)[ref.index].attr.func = new FuncInfo();
+    (*ref.table)[ref.index].attr.func->table = table;
+    (*ref.table)[ref.index].offset = instTable->newLabel(-1); // pre-allocate a label for recursive calls
+    enterTable(table);
+    int size = sizeOf(type.attr.typ);
+    if(size == 0) {
+#ifdef DEBUG
+        fprintf(stderr, "[ERROR] Invalid return type in function definition.\n");
+#endif
+        return -1;
+    } else if(size < 0) {
+        return size;
+    }
+    ref = table->newSymbol(0, IDENTIFIER, type.attr.typ->dataType, size); // return value symbol
+    if(type.attr.typ->dataType == DT_ARRAY)
+        (*ref.table)[ref.index].attr.arr = type.attr.typ->attr.arr;
+    else if(type.attr.typ->dataType == DT_STRUCT)
+        (*ref.table)[ref.index].attr.table = type.attr.typ->attr.table;
+    return 0;
+}
+
+// TYPE -> TYPE_BASIC
+int SA_30(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE -> TYPE_BASIC\n");
 #endif
@@ -1090,7 +1159,7 @@ int SA_29(GrammaSymbol &sym) {
 }
 
 // TYPE -> TYPE_ARRAY
-int SA_30(GrammaSymbol &sym) {
+int SA_31(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE -> TYPE_ARRAY\n");
 #endif
@@ -1103,7 +1172,7 @@ int SA_30(GrammaSymbol &sym) {
 }
 
 // TYPE -> TYPE_STRUCT
-int SA_31(GrammaSymbol &sym) {
+int SA_32(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE -> TYPE_STRUCT\n");
 #endif
@@ -1123,7 +1192,7 @@ int SA_31(GrammaSymbol &sym) {
 }
 
 // TYPE_BASIC -> int
-int SA_32(GrammaSymbol &sym) {
+int SA_33(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE_BASIC -> int\n");
 #endif
@@ -1133,7 +1202,7 @@ int SA_32(GrammaSymbol &sym) {
 }
 
 // TYPE_BASIC -> float
-int SA_33(GrammaSymbol &sym) {
+int SA_34(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE_BASIC -> float\n");
 #endif
@@ -1143,7 +1212,7 @@ int SA_33(GrammaSymbol &sym) {
 }
 
 // TYPE_BASIC -> bool
-int SA_34(GrammaSymbol &sym) {
+int SA_35(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE_BASIC -> bool\n");
 #endif
@@ -1153,7 +1222,7 @@ int SA_34(GrammaSymbol &sym) {
 }
 
 // TYPE_ARRAY -> TYPE_ARRAY [ constant ]
-int SA_35(GrammaSymbol &sym) {
+int SA_36(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE_ARRAY -> TYPE_ARRAY [ constant ]\n");
 #endif
@@ -1180,7 +1249,7 @@ int SA_35(GrammaSymbol &sym) {
 }
 
 // TYPE_ARRAY -> TYPE_BASIC [ constant ]
-int SA_36(GrammaSymbol &sym) {
+int SA_37(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE_ARRAY -> TYPE_BASIC [ constant ]\n");
 #endif
@@ -1208,7 +1277,7 @@ int SA_36(GrammaSymbol &sym) {
 }
 
 // TYPE_STRUCT -> struct identifier
-int SA_37(GrammaSymbol &sym) {
+int SA_38(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] TYPE_STRUCT -> struct identifier\n");
 #endif
@@ -1220,7 +1289,7 @@ int SA_37(GrammaSymbol &sym) {
 }
 
 // SELECT -> SELECT_BEGIN STATEMENT
-int SA_38(GrammaSymbol &sym) {
+int SA_39(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] SELECT -> SELECT_BEGIN STATEMENT\n");
 #endif
@@ -1245,7 +1314,7 @@ int SA_38(GrammaSymbol &sym) {
 }
 
 // SELECT -> SELECT_BEGIN STATEMENT SELECT_MID STATEMENT
-int SA_39(GrammaSymbol &sym) {
+int SA_40(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] SELECT -> SELECT_BEGIN STATEMENT SELECT_MID STATEMENT\n");
 #endif
@@ -1277,7 +1346,7 @@ int SA_39(GrammaSymbol &sym) {
 }
 
 // SELECT_BEGIN -> if ( EXPRESSION )
-int SA_40(GrammaSymbol &sym) {
+int SA_41(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] SELECT_BEGIN -> if ( EXPRESSION )\n");
 #endif
@@ -1299,7 +1368,7 @@ int SA_40(GrammaSymbol &sym) {
         sym.end = code.second;
     }
     SymbolTableEntryRef ref = symbolTable->newSymbol(0, IDENTIFIER, DT_BLOCK, 0);
-    SymbolTable *table = new SymbolTable(symbolTable);
+    SymbolTable *table = new SymbolTable(symbolTable, false);
     (*ref.table)[ref.index].attr.table = table;
     enterTable(table);
     sym.attr.sel_b->trueList.splice(sym.attr.sel_b->trueList.end(), expression.attr.exp->trueList);
@@ -1308,7 +1377,7 @@ int SA_40(GrammaSymbol &sym) {
 }
 
 // SELECT_MID -> else
-int SA_41(GrammaSymbol &sym) {
+int SA_42(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] SELECT_MID -> else\n");
 #endif
@@ -1317,14 +1386,14 @@ int SA_41(GrammaSymbol &sym) {
     sym.nextList.push_back(code);
     quitTable();
     SymbolTableEntryRef ref = symbolTable->newSymbol(0, IDENTIFIER, DT_BLOCK, 0);
-    SymbolTable *table = new SymbolTable(symbolTable);
+    SymbolTable *table = new SymbolTable(symbolTable, false);
     (*ref.table)[ref.index].attr.table = table;
     enterTable(table);
     return 0;
 }
 
 // LOOP -> LOOP_BEGIN STATEMENT
-int SA_42(GrammaSymbol &sym) {
+int SA_43(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] LOOP -> LOOP_BEGIN STATEMENT\n");
 #endif
@@ -1353,7 +1422,7 @@ int SA_42(GrammaSymbol &sym) {
 }
 
 // LOOP_BEGIN -> while ( EXPRESSION )
-int SA_43(GrammaSymbol &sym) {
+int SA_44(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] LOOP_BEGIN -> while ( EXPRESSION )\n");
 #endif
@@ -1375,7 +1444,7 @@ int SA_43(GrammaSymbol &sym) {
         sym.end = code.second;
     }
     SymbolTableEntryRef ref = symbolTable->newSymbol(0, IDENTIFIER, DT_BLOCK, 0);
-    SymbolTable *table = new SymbolTable(symbolTable);
+    SymbolTable *table = new SymbolTable(symbolTable, false);
     (*ref.table)[ref.index].attr.table = table;
     enterTable(table);
     sym.attr.loop_b->falseList.splice(sym.attr.loop_b->falseList.end(), expression.attr.exp->falseList);
@@ -1384,7 +1453,7 @@ int SA_43(GrammaSymbol &sym) {
 }
 
 // EXPRESSION_S -> EXPRESSION_S , EXPRESSION
-int SA_44(GrammaSymbol &sym) {
+int SA_45(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION_S -> EXPRESSION_S , EXPRESSION\n");
 #endif
@@ -1429,7 +1498,7 @@ int SA_44(GrammaSymbol &sym) {
 }
 
 // EXPRESSION_S -> EXPRESSION
-int SA_45(GrammaSymbol &sym) {
+int SA_46(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION_S -> EXPRESSION\n");
 #endif
@@ -1467,7 +1536,7 @@ int SA_45(GrammaSymbol &sym) {
 }
 
 // EXPRESSION1 -> identifier ( EXPRESSION_S )
-int SA_46(GrammaSymbol &sym) {
+int SA_47(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION1 -> identifier ( EXPRESSION_S )\n");
 #endif
@@ -1499,11 +1568,8 @@ int SA_46(GrammaSymbol &sym) {
     }
     int i = 1;
     for(list<ExpInfo*>::iterator it = expression_s.attr.exps->expList.begin(); it != expression_s.attr.exps->expList.end(); it++) {
-        ExpInfo paramExp;
-        paramExp.ref = {(*ref.table)[ref.index].attr.func->table, i};
-        paramExp.offset = -1;
-        paramExp.ndim = 0;
-        if(!typeMatch(&paramExp, *it)) {
+        SymbolTableEntryRef pRef = {(*ref.table)[ref.index].attr.func->table, i};
+        if(!typeMatch(pRef, *it)) {
             printf("Line %d, Col %d: Invalid argument type.\n", row, col);
             return -2;
         }
@@ -1536,7 +1602,7 @@ int SA_46(GrammaSymbol &sym) {
 }
 
 // EXPRESSION1 -> identifier ( )
-int SA_47(GrammaSymbol &sym) {
+int SA_48(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION1 -> identifier ( )\n");
 #endif
@@ -1575,7 +1641,7 @@ int SA_47(GrammaSymbol &sym) {
 }
 
 // EXPRESSION2 -> EXPRESSION1
-int SA_48(GrammaSymbol &sym) {
+int SA_49(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION2 -> EXPRESSION1\n");
 #endif
@@ -1589,7 +1655,7 @@ int SA_48(GrammaSymbol &sym) {
 }
 
 // EXPRESSION2 -> identifier
-int SA_49(GrammaSymbol &sym) {
+int SA_50(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION2 -> identifier\n");
 #endif
@@ -1608,7 +1674,7 @@ int SA_49(GrammaSymbol &sym) {
 }
 
 // EXPRESSION2 -> constant
-int SA_50(GrammaSymbol &sym) {
+int SA_51(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION2 -> constant\n");
 #endif
@@ -1629,7 +1695,7 @@ int SA_50(GrammaSymbol &sym) {
 }
 
 // EXPRESSION2 -> ( EXPRESSION )
-int SA_51(GrammaSymbol &sym) {
+int SA_52(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION2 -> ( EXPRESSION )\n");
 #endif
@@ -1643,7 +1709,7 @@ int SA_51(GrammaSymbol &sym) {
 }
 
 // EXPRESSION2 -> ! EXPRESSION2
-int SA_52(GrammaSymbol &sym) {
+int SA_53(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION2 -> ! EXPRESSION2\n");
 #endif
@@ -1673,7 +1739,7 @@ int SA_52(GrammaSymbol &sym) {
 }
 
 // EXPRESSION2 -> - EXPRESSION2
-int SA_53(GrammaSymbol &sym) {
+int SA_54(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION2 -> - EXPRESSION2\n");
 #endif
@@ -1704,7 +1770,7 @@ int SA_53(GrammaSymbol &sym) {
 }
 
 // EXPRESSION3 -> EXPRESSION2
-int SA_54(GrammaSymbol &sym) {
+int SA_55(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION3 -> EXPRESSION2\n");
 #endif
@@ -1718,7 +1784,7 @@ int SA_54(GrammaSymbol &sym) {
 }
 
 // EXPRESSION3 -> EXPRESSION3 . identifier
-int SA_55(GrammaSymbol &sym) {
+int SA_56(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION3 -> EXPRESSION3 . identifier\n");
 #endif
@@ -1748,7 +1814,7 @@ int SA_55(GrammaSymbol &sym) {
 }
 
 // EXPRESSION3 -> EXPRESSION3 [ EXPRESSION ]
-int SA_56(GrammaSymbol &sym) {
+int SA_57(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION3 -> EXPRESSION3 [ EXPRESSION ]\n");
 #endif
@@ -1759,7 +1825,7 @@ int SA_56(GrammaSymbol &sym) {
 }
 
 // EXPRESSION4 -> EXPRESSION3
-int SA_57(GrammaSymbol &sym) {
+int SA_58(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION4 -> EXPRESSION3\n");
 #endif
@@ -1773,7 +1839,7 @@ int SA_57(GrammaSymbol &sym) {
 }
 
 // EXPRESSION4 -> EXPRESSION4 * EXPRESSION3
-int SA_58(GrammaSymbol &sym) {
+int SA_59(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION4 -> EXPRESSION4 * EXPRESSION3\n");
 #endif
@@ -1818,7 +1884,7 @@ int SA_58(GrammaSymbol &sym) {
 }
 
 // EXPRESSION4 -> EXPRESSION4 / EXPRESSION3
-int SA_59(GrammaSymbol &sym) {
+int SA_60(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION4 -> EXPRESSION4 / EXPRESSION3\n");
 #endif
@@ -1863,7 +1929,7 @@ int SA_59(GrammaSymbol &sym) {
 }
 
 // EXPRESSION5 -> EXPRESSION4
-int SA_60(GrammaSymbol &sym) {
+int SA_61(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION5 -> EXPRESSION4\n");
 #endif
@@ -1877,7 +1943,7 @@ int SA_60(GrammaSymbol &sym) {
 }
 
 // EXPRESSION5 -> EXPRESSION5 + EXPRESSION4
-int SA_61(GrammaSymbol &sym) {
+int SA_62(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION5 -> EXPRESSION5 + EXPRESSION4\n");
 #endif
@@ -1922,7 +1988,7 @@ int SA_61(GrammaSymbol &sym) {
 }
 
 // EXPRESSION5 -> EXPRESSION5 - EXPRESSION4
-int SA_62(GrammaSymbol &sym) {
+int SA_63(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION5 -> EXPRESSION5 - EXPRESSION4\n");
 #endif
@@ -1967,7 +2033,7 @@ int SA_62(GrammaSymbol &sym) {
 }
 
 // EXPRESSION6 -> EXPRESSION5
-int SA_63(GrammaSymbol &sym) {
+int SA_64(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION6 -> EXPRESSION5\n");
 #endif
@@ -1981,7 +2047,7 @@ int SA_63(GrammaSymbol &sym) {
 }
 
 // EXPRESSION6 -> EXPRESSION6 == EXPRESSION5
-int SA_64(GrammaSymbol &sym) {
+int SA_65(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION6 -> EXPRESSION6 == EXPRESSION5\n");
 #endif
@@ -2045,7 +2111,7 @@ int SA_64(GrammaSymbol &sym) {
 }
 
 // EXPRESSION6 -> EXPRESSION6 != EXPRESSION5
-int SA_65(GrammaSymbol &sym) {
+int SA_66(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION6 -> EXPRESSION6 != EXPRESSION5\n");
 #endif
@@ -2109,7 +2175,7 @@ int SA_65(GrammaSymbol &sym) {
 }
 
 // EXPRESSION6 -> EXPRESSION6 > EXPRESSION5
-int SA_66(GrammaSymbol &sym) {
+int SA_67(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION6 -> EXPRESSION6 > EXPRESSION5\n");
 #endif
@@ -2151,7 +2217,7 @@ int SA_66(GrammaSymbol &sym) {
 }
 
 // EXPRESSION6 -> EXPRESSION6 >= EXPRESSION5
-int SA_67(GrammaSymbol &sym) {
+int SA_68(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION6 -> EXPRESSION6 >= EXPRESSION5\n");
 #endif
@@ -2193,7 +2259,7 @@ int SA_67(GrammaSymbol &sym) {
 }
 
 // EXPRESSION6 -> EXPRESSION6 < EXPRESSION5
-int SA_68(GrammaSymbol &sym) {
+int SA_69(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION6 -> EXPRESSION6 < EXPRESSION5\n");
 #endif
@@ -2235,7 +2301,7 @@ int SA_68(GrammaSymbol &sym) {
 }
 
 // EXPRESSION6 -> EXPRESSION6 <= EXPRESSION5
-int SA_69(GrammaSymbol &sym) {
+int SA_70(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION6 -> EXPRESSION6 <= EXPRESSION5\n");
 #endif
@@ -2277,7 +2343,7 @@ int SA_69(GrammaSymbol &sym) {
 }
 
 // EXPRESSION7 -> EXPRESSION6
-int SA_70(GrammaSymbol &sym) {
+int SA_71(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION7 -> EXPRESSION6\n");
 #endif
@@ -2291,7 +2357,7 @@ int SA_70(GrammaSymbol &sym) {
 }
 
 // EXPRESSION7 -> EXPRESSION7 && EXPRESSION6
-int SA_71(GrammaSymbol &sym) {
+int SA_72(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION7 -> EXPRESSION7 && EXPRESSION6\n");
 #endif
@@ -2332,7 +2398,7 @@ int SA_71(GrammaSymbol &sym) {
 }
 
 // EXPRESSION7 -> EXPRESSION7 || EXPRESSION6
-int SA_72(GrammaSymbol &sym) {
+int SA_73(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION7 -> EXPRESSION7 || EXPRESSION6\n");
 #endif
@@ -2373,7 +2439,7 @@ int SA_72(GrammaSymbol &sym) {
 }
 
 // EXPRESSION8 -> EXPRESSION7
-int SA_73(GrammaSymbol &sym) {
+int SA_74(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION8 -> EXPRESSION7\n");
 #endif
@@ -2387,7 +2453,7 @@ int SA_73(GrammaSymbol &sym) {
 }
 
 // EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
-int SA_74(GrammaSymbol &sym) {
+int SA_75(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION8 -> EXPRESSION7 = EXPRESSION8\n");
 #endif
@@ -2451,7 +2517,7 @@ int SA_74(GrammaSymbol &sym) {
 }
 
 // EXPRESSION -> EXPRESSION8
-int SA_75(GrammaSymbol &sym) {
+int SA_76(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] EXPRESSION -> EXPRESSION8\n");
 #endif
@@ -2465,7 +2531,7 @@ int SA_75(GrammaSymbol &sym) {
 }
 
 // IDENTIFIER_S -> IDENTIFIER_S , identifier
-int SA_76(GrammaSymbol &sym) {
+int SA_77(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] IDENTIFIER_S -> IDENTIFIER_S , identifier\n");
 #endif
@@ -2479,7 +2545,7 @@ int SA_76(GrammaSymbol &sym) {
 }
 
 // IDENTIFIER_S -> identifier
-int SA_77(GrammaSymbol &sym) {
+int SA_78(GrammaSymbol &sym) {
 #ifdef DEBUG
     fprintf(stderr, "[DEBUG] IDENTIFIER_S -> identifier\n");
 #endif
@@ -2569,5 +2635,6 @@ int (*(semanticActions[PRO_N]))(GrammaSymbol &sym) = {
     SA_75,
     SA_76,
     SA_77,
+    SA_78
 };
 

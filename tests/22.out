@@ -130,7 +130,7 @@ PARAMETERS -> PARAMETERS , TYPE identifier
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
 PARAMETERS -> PARAMETERS , TYPE identifier
-DECLARE_FUNC_MID -> PARAMETERS ) {
+DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN PARAMETERS ) {
 EXPRESSION2 -> identifier
 EXPRESSION3 -> EXPRESSION2
 EXPRESSION4 -> EXPRESSION3
@@ -165,7 +165,7 @@ EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
 EXPRESSION -> EXPRESSION8
 STATEMENT -> EXPRESSION ;
 STATEMENT_S -> STATEMENT_S STATEMENT
-DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
 DECLARE -> DECLARE_FUNC
 DECLARE_S -> DECLARE_S DECLARE
 TYPE_BASIC -> int
@@ -183,7 +183,7 @@ DECLARE_S -> DECLARE_S DECLARE
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
 DECLARE_FUNC_BEGIN -> TYPE identifier (
-DECLARE_FUNC_MID -> ) {
+DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN ) {
 TYPE_BASIC -> bool
 TYPE -> TYPE_BASIC
 IDENTIFIER_S -> identifier
@@ -327,7 +327,7 @@ EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
 EXPRESSION -> EXPRESSION8
 STATEMENT -> EXPRESSION ;
 STATEMENT_S -> STATEMENT_S STATEMENT
-DECLARE_FUNC -> DECLARE_FUNC_BEGIN DECLARE_FUNC_MID STATEMENT_S }
+DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
 DECLARE -> DECLARE_FUNC
 DECLARE_S -> DECLARE_S DECLARE
 TYPE_BASIC -> float
@@ -351,7 +351,7 @@ Global Symbol Table (Table 0):
     5 | BLOCK        | f            | .L0      | Table 1, Params#: 3
     6 | INT          | d            | 25       | 
     7 | BOOL         | e            | 29       | 
-    8 | BLOCK        | main         | .L5      | Table 2, Params#: 0
+    8 | BLOCK        | main         | .L1      | Table 2, Params#: 0
     9 | FLOAT        | g            | 30       | 
 
 Table 1:
@@ -376,15 +376,15 @@ Instruction sequence:
 .L0    ( MOV,   1:3  ,   1:1  ,        )
        ( MOV,   1:1  ,   1:2  ,        )
        ( RET,        ,        ,        )
-.L5    (  JE,   0:0  ,   0:0  , .L2    )
-       ( JMP,        ,        , .L3    )
-.L2    ( TRU,        ,        ,   2:2  )
-       ( JMP,        ,        , .L1    )
-.L3    ( FAL,        ,        ,   2:2  )
-.L1    ( MOV,   2:1  ,   2:2  ,        )
-       ( JNZ,   2:1  ,        , .L4    )
+.L1    (  JE,   0:0  ,   0:0  , .L3    )
        ( JMP,        ,        , .L4    )
-.L4    ( MOV,   2:2  ,   0:1  ,        )
+.L3    ( TRU,        ,        ,   2:2  )
+       ( JMP,        ,        , .L2    )
+.L4    ( FAL,        ,        ,   2:2  )
+.L2    ( MOV,   2:1  ,   2:2  ,        )
+       ( JNZ,   2:1  ,        , .L5    )
+       ( JMP,        ,        , .L5    )
+.L5    ( MOV,   2:2  ,   0:1  ,        )
        ( MOV,   2:3  ,   0:0  ,        )
        ( PAR,        ,        ,   2:3  )
        ( PAR,        ,        ,   2:1  )

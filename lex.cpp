@@ -24,9 +24,9 @@ const char *DL_START = "=()[],;{}";
 const char BLANK_CHAR[] = " \n\t";
 
 // one-to-one correspondent non-datatype keywords and their codes
-const int NON_DATATYPE_KEYWORDS_NUM = 4;
-const char *(NON_DATATYPE_KEYWORDS[NON_DATATYPE_KEYWORDS_NUM]) = {"if", "else", "do", "while"};
-const SymbolType NON_DATATYPE_KEYWORD_CODES[NON_DATATYPE_KEYWORDS_NUM] = {IF, ELSE, DO, WHILE};
+const int NON_DATATYPE_KEYWORDS_NUM = 5;
+const char *(NON_DATATYPE_KEYWORDS[NON_DATATYPE_KEYWORDS_NUM]) = {"if", "else", "do", "while", "return"};
+const SymbolType NON_DATATYPE_KEYWORD_CODES[NON_DATATYPE_KEYWORDS_NUM] = {IF, ELSE, DO, WHILE, RETURN};
 
 // one-to-one correspondent datatype keywords and their codes
 const int DATATYPE_KEYWORDS_NUM = 4;

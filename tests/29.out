@@ -4,114 +4,143 @@ input           < IDENTIFIER  , 1      >
 (               < LEFTPAREN   ,        >
 )               < RIGHTPAREN  ,        >
 {               < LEFTBRACE   ,        >
+int             < INT         ,        >
+a               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+a               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+1               < CONSTANT    , 3      >
+;               < SEMICOLON   ,        >
+return          < RETURN      ,        >
+a               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
 }               < RIGHTBRACE  ,        >
 int             < INT         ,        >
-print           < IDENTIFIER  , 2      >
+print           < IDENTIFIER  , 4      >
 (               < LEFTPAREN   ,        >
 int             < INT         ,        >
-a               < IDENTIFIER  , 3      >
+a               < IDENTIFIER  , 2      >
 )               < RIGHTPAREN  ,        >
 {               < LEFTBRACE   ,        >
 }               < RIGHTBRACE  ,        >
 int             < INT         ,        >
-main            < IDENTIFIER  , 4      >
+gcd             < IDENTIFIER  , 5      >
 (               < LEFTPAREN   ,        >
-)               < RIGHTPAREN  ,        >
-{               < LEFTBRACE   ,        >
 int             < INT         ,        >
-a               < IDENTIFIER  , 3      >
+a               < IDENTIFIER  , 2      >
 ,               < COMMA       ,        >
-b               < IDENTIFIER  , 5      >
-;               < SEMICOLON   ,        >
-a               < IDENTIFIER  , 3      >
-=               < ASSIGN      ,        >
-input           < IDENTIFIER  , 1      >
-(               < LEFTPAREN   ,        >
+int             < INT         ,        >
+b               < IDENTIFIER  , 6      >
 )               < RIGHTPAREN  ,        >
-;               < SEMICOLON   ,        >
-b               < IDENTIFIER  , 5      >
-=               < ASSIGN      ,        >
-input           < IDENTIFIER  , 1      >
-(               < LEFTPAREN   ,        >
-)               < RIGHTPAREN  ,        >
-;               < SEMICOLON   ,        >
-/* ... */       < COMMENT     ,        >
+{               < LEFTBRACE   ,        >
 if              < IF          ,        >
 (               < LEFTPAREN   ,        >
-a               < IDENTIFIER  , 3      >
-<               < LESS        ,        >
-b               < IDENTIFIER  , 5      >
-)               < RIGHTPAREN  ,        >
-{               < LEFTBRACE   ,        >
-int             < INT         ,        >
-c               < IDENTIFIER  , 6      >
-;               < SEMICOLON   ,        >
-c               < IDENTIFIER  , 6      >
-=               < ASSIGN      ,        >
-a               < IDENTIFIER  , 3      >
-;               < SEMICOLON   ,        >
-a               < IDENTIFIER  , 3      >
-=               < ASSIGN      ,        >
-b               < IDENTIFIER  , 5      >
-;               < SEMICOLON   ,        >
-b               < IDENTIFIER  , 5      >
-=               < ASSIGN      ,        >
-c               < IDENTIFIER  , 6      >
-;               < SEMICOLON   ,        >
-}               < RIGHTBRACE  ,        >
-/* ... */       < COMMENT     ,        >
-while           < WHILE       ,        >
-(               < LEFTPAREN   ,        >
-b               < IDENTIFIER  , 5      >
->               < GREATER     ,        >
+b               < IDENTIFIER  , 6      >
+==              < EQUAL       ,        >
 0               < CONSTANT    , 7      >
 )               < RIGHTPAREN  ,        >
-{               < LEFTBRACE   ,        >
-int             < INT         ,        >
-r               < IDENTIFIER  , 8      >
+return          < RETURN      ,        >
+a               < IDENTIFIER  , 2      >
 ;               < SEMICOLON   ,        >
-r               < IDENTIFIER  , 8      >
-=               < ASSIGN      ,        >
-a               < IDENTIFIER  , 3      >
+else            < ELSE        ,        >
+return          < RETURN      ,        >
+gcd             < IDENTIFIER  , 5      >
+(               < LEFTPAREN   ,        >
+b               < IDENTIFIER  , 6      >
+,               < COMMA       ,        >
+a               < IDENTIFIER  , 2      >
 -               < MINUS       ,        >
-a               < IDENTIFIER  , 3      >
+a               < IDENTIFIER  , 2      >
 /               < DIVIDE      ,        >
-b               < IDENTIFIER  , 5      >
+b               < IDENTIFIER  , 6      >
 *               < MULTIPLY    ,        >
-b               < IDENTIFIER  , 5      >
-;               < SEMICOLON   ,        >
-a               < IDENTIFIER  , 3      >
-=               < ASSIGN      ,        >
-b               < IDENTIFIER  , 5      >
-;               < SEMICOLON   ,        >
-b               < IDENTIFIER  , 5      >
-=               < ASSIGN      ,        >
-r               < IDENTIFIER  , 8      >
+b               < IDENTIFIER  , 6      >
+)               < RIGHTPAREN  ,        >
 ;               < SEMICOLON   ,        >
 }               < RIGHTBRACE  ,        >
-print           < IDENTIFIER  , 2      >
+int             < INT         ,        >
+main            < IDENTIFIER  , 8      >
 (               < LEFTPAREN   ,        >
-a               < IDENTIFIER  , 3      >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+int             < INT         ,        >
+a               < IDENTIFIER  , 2      >
+,               < COMMA       ,        >
+b               < IDENTIFIER  , 6      >
+;               < SEMICOLON   ,        >
+a               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+input           < IDENTIFIER  , 1      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+b               < IDENTIFIER  , 6      >
+=               < ASSIGN      ,        >
+input           < IDENTIFIER  , 1      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+;               < SEMICOLON   ,        >
+print           < IDENTIFIER  , 4      >
+(               < LEFTPAREN   ,        >
+gcd             < IDENTIFIER  , 5      >
+(               < LEFTPAREN   ,        >
+a               < IDENTIFIER  , 2      >
+,               < COMMA       ,        >
+b               < IDENTIFIER  , 6      >
+)               < RIGHTPAREN  ,        >
 )               < RIGHTPAREN  ,        >
 ;               < SEMICOLON   ,        >
 }               < RIGHTBRACE  ,        >
 
 Symbol table:
 1     input
-2     print
-3     a
-4     main
-5     b
-6     c
+2     a
+3     1
+4     print
+5     gcd
+6     b
 7     0
-8     r
+8     main
 
 Production sequence:
 TYPE_BASIC -> int
 TYPE -> TYPE_BASIC
 DECLARE_FUNC_BEGIN -> TYPE identifier (
 DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN ) {
-DECLARE_FUNC -> DECLARE_FUNC_SIGN }
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+STATEMENT -> return EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
 DECLARE -> DECLARE_FUNC
 DECLARE_S -> DECLARE
 TYPE_BASIC -> int
@@ -122,6 +151,84 @@ TYPE -> TYPE_BASIC
 PARAMETERS -> TYPE identifier
 DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN PARAMETERS ) {
 DECLARE_FUNC -> DECLARE_FUNC_SIGN }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+PARAMETERS -> TYPE identifier
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+PARAMETERS -> PARAMETERS , TYPE identifier
+DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN PARAMETERS ) {
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION6 == EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+SELECT_BEGIN -> if ( EXPRESSION )
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+STATEMENT -> return EXPRESSION ;
+SELECT_MID -> else
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+EXPRESSION_S -> EXPRESSION
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION4 / EXPRESSION3
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION4 * EXPRESSION3
+EXPRESSION5 -> EXPRESSION5 - EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+EXPRESSION_S -> EXPRESSION_S , EXPRESSION
+EXPRESSION1 -> identifier ( EXPRESSION_S )
+EXPRESSION2 -> EXPRESSION1
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+STATEMENT -> return EXPRESSION ;
+SELECT -> SELECT_BEGIN STATEMENT SELECT_MID STATEMENT
+STATEMENT -> SELECT
+STATEMENT_S -> STATEMENT
+DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
 DECLARE -> DECLARE_FUNC
 DECLARE_S -> DECLARE_S DECLARE
 TYPE_BASIC -> int
@@ -176,28 +283,10 @@ EXPRESSION3 -> EXPRESSION2
 EXPRESSION4 -> EXPRESSION3
 EXPRESSION5 -> EXPRESSION4
 EXPRESSION6 -> EXPRESSION5
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION6 < EXPRESSION5
 EXPRESSION7 -> EXPRESSION6
 EXPRESSION8 -> EXPRESSION7
 EXPRESSION -> EXPRESSION8
-SELECT_BEGIN -> if ( EXPRESSION )
-STATEMENTS_BEGIN -> {
-TYPE_BASIC -> int
-TYPE -> TYPE_BASIC
-IDENTIFIER_S -> identifier
-DECLARE_VAR -> TYPE IDENTIFIER_S ;
-STATEMENT -> DECLARE_VAR
-STATEMENT_S -> STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
+EXPRESSION_S -> EXPRESSION
 EXPRESSION2 -> identifier
 EXPRESSION3 -> EXPRESSION2
 EXPRESSION4 -> EXPRESSION3
@@ -205,135 +294,10 @@ EXPRESSION5 -> EXPRESSION4
 EXPRESSION6 -> EXPRESSION5
 EXPRESSION7 -> EXPRESSION6
 EXPRESSION8 -> EXPRESSION7
-EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
 EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT_S STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT_S STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT_S STATEMENT
-STATEMENT -> STATEMENTS_BEGIN STATEMENT_S }
-SELECT -> SELECT_BEGIN STATEMENT
-STATEMENT -> SELECT
-STATEMENT_S -> STATEMENT_S STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION2 -> constant
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION6 > EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION -> EXPRESSION8
-LOOP_BEGIN -> while ( EXPRESSION )
-STATEMENTS_BEGIN -> {
-TYPE_BASIC -> int
-TYPE -> TYPE_BASIC
-IDENTIFIER_S -> identifier
-DECLARE_VAR -> TYPE IDENTIFIER_S ;
-STATEMENT -> DECLARE_VAR
-STATEMENT_S -> STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION4 / EXPRESSION3
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION4 * EXPRESSION3
-EXPRESSION5 -> EXPRESSION5 - EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT_S STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT_S STATEMENT
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION2 -> identifier
-EXPRESSION3 -> EXPRESSION2
-EXPRESSION4 -> EXPRESSION3
-EXPRESSION5 -> EXPRESSION4
-EXPRESSION6 -> EXPRESSION5
-EXPRESSION7 -> EXPRESSION6
-EXPRESSION8 -> EXPRESSION7
-EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
-EXPRESSION -> EXPRESSION8
-STATEMENT -> EXPRESSION ;
-STATEMENT_S -> STATEMENT_S STATEMENT
-STATEMENT -> STATEMENTS_BEGIN STATEMENT_S }
-LOOP -> LOOP_BEGIN STATEMENT
-STATEMENT -> LOOP
-STATEMENT_S -> STATEMENT_S STATEMENT
-EXPRESSION2 -> identifier
+EXPRESSION_S -> EXPRESSION_S , EXPRESSION
+EXPRESSION1 -> identifier ( EXPRESSION_S )
+EXPRESSION2 -> EXPRESSION1
 EXPRESSION3 -> EXPRESSION2
 EXPRESSION4 -> EXPRESSION3
 EXPRESSION5 -> EXPRESSION4
@@ -363,15 +327,18 @@ Semantic Symbol Tables:
 Global Symbol Table (Table 0):
   #   |   DataType   |     Name     |  Offset  |    Attr
 ------+--------------+--------------+----------+------------
-    0 | INT          | 0            | 0        | 
-    1 | BLOCK        | input        | .L0      | Table 1, Params#: 0
-    2 | BLOCK        | print        | .L1      | Table 2, Params#: 1
-    3 | BLOCK        | main         | .L2      | Table 3, Params#: 0
+    0 | INT          | 1            | 0        | 
+    1 | INT          | 0            | 4        | 
+    2 | BLOCK        | input        | .L0      | Table 1, Params#: 0
+    3 | BLOCK        | print        | .L1      | Table 2, Params#: 1
+    4 | BLOCK        | gcd          | .L2      | Table 3, Params#: 2
+    5 | BLOCK        | main         | .L6      | Table 6, Params#: 0
 
 Table 1:
   #   |   DataType   |     Name     |  Offset  |    Attr
 ------+--------------+--------------+----------+------------
     0 | INT          | (anonymous)  | 0        | 
+    1 | INT          | a            | 4        | 
 
 Table 2:
   #   |   DataType   |     Name     |  Offset  |    Attr
@@ -386,50 +353,51 @@ Table 3:
     1 | INT          | a            | 4        | 
     2 | INT          | b            | 8        | 
     3 | BLOCK        | (anonymous)  |          | Table 4
-    4 | BLOCK        | (anonymous)  |          | Table 6
+    4 | BLOCK        | (anonymous)  |          | Table 5
 
 Table 4:
   #   |   DataType   |     Name     |  Offset  |    Attr
 ------+--------------+--------------+----------+------------
-    0 | BLOCK        | (anonymous)  |          | Table 5
 
 Table 5:
   #   |   DataType   |     Name     |  Offset  |    Attr
 ------+--------------+--------------+----------+------------
-    0 | INT          | c            | 0        | 
 
 Table 6:
   #   |   DataType   |     Name     |  Offset  |    Attr
 ------+--------------+--------------+----------+------------
-    0 | BLOCK        | (anonymous)  |          | Table 7
-
-Table 7:
-  #   |   DataType   |     Name     |  Offset  |    Attr
-------+--------------+--------------+----------+------------
-    0 | INT          | r            | 0        | 
+    0 | INT          | (anonymous)  | 0        | 
+    1 | INT          | a            | 4        | 
+    2 | INT          | b            | 8        | 
 
 
 Instruction sequence:
-.L0    ( RET,        ,        ,        )
+.L0    ( MOV,   1:1  ,   0:0  ,        )
+       ( MOV,   1:0  ,   1:1  ,        )
+       ( RET,        ,        ,        )
+       ( RET,        ,        ,        )
 .L1    ( RET,        ,        ,        )
-.L2    (CALL,   3:3  ,        , .L0    )
-       ( MOV,   3:1  ,   3:3  ,        )
-       (CALL,   3:3  ,        , .L0    )
-       ( MOV,   3:2  ,   3:3  ,        )
-       (  JL,   3:1  ,   3:2  , .L3    )
+.L2    (  JE,   3:2  ,   0:1  , .L3    )
        ( JMP,        ,        , .L4    )
-.L3    ( MOV,   5:0  ,   3:1  ,        )
-       ( MOV,   3:1  ,   3:2  ,        )
-       ( MOV,   3:2  ,   5:0  ,        )
-.L4    (  JG,   3:2  ,   0:0  , .L5    )
-       ( JMP,        ,        , .L6    )
-.L5    ( DIV,   3:1  ,   3:2  ,   7:1  )
-       ( MUL,   7:1  ,   3:2  ,   7:1  )
-       ( SUB,   3:1  ,   7:1  ,   7:1  )
-       ( MOV,   7:0  ,   7:1  ,        )
-       ( MOV,   3:1  ,   3:2  ,        )
-       ( MOV,   3:2  ,   7:0  ,        )
-       ( JMP,        ,        , .L4    )
-.L6    ( PAR,        ,        ,   3:1  )
-       (CALL,   3:5  ,        , .L1    )
+.L3    ( MOV,   3:0  ,   3:1  ,        )
+       ( RET,        ,        ,        )
+       ( JMP,        ,        , .L5    )
+.L4    ( DIV,   3:1  ,   3:2  ,   5:0  )
+       ( MUL,   5:0  ,   3:2  ,   5:0  )
+       ( SUB,   3:1  ,   5:0  ,   5:0  )
+       ( PAR,        ,        ,   3:2  )
+       ( PAR,        ,        ,   5:0  )
+       (CALL,   5:0  ,        , .L2    )
+       ( MOV,   3:0  ,   5:0  ,        )
+       ( RET,        ,        ,        )
+.L5    ( RET,        ,        ,        )
+.L6    (CALL,   6:3  ,        , .L0    )
+       ( MOV,   6:1  ,   6:3  ,        )
+       (CALL,   6:3  ,        , .L0    )
+       ( MOV,   6:2  ,   6:3  ,        )
+       ( PAR,        ,        ,   6:1  )
+       ( PAR,        ,        ,   6:2  )
+       (CALL,   6:3  ,        , .L2    )
+       ( PAR,        ,        ,   6:3  )
+       (CALL,   6:3  ,        , .L1    )
        ( RET,        ,        ,        )

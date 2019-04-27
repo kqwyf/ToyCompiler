@@ -36,6 +36,7 @@ enum SymbolType {
     LEFTBRACE,
     RIGHTBRACE,
     CONSTANT,
+    RETURN,
     COMMENT,
     PROGRAM,
     DECLARE_S,
