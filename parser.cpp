@@ -48,7 +48,7 @@ int sizeOf(TypeInfo *typ);
 void enterTable(SymbolTable *table);
 int quitTable();
 pair<int, int> evalBoolExp(ExpInfo *exp, int next);
-pair<int, int> genBoolJmpCode();
+pair<int, int> genBoolJmpCode(ExpInfo *exp);
 bool typeMatch(ExpInfo *lexp, ExpInfo *rexp);
 bool typeMatch(SymbolDataType ldataType, ExpInfo *rexp);
 bool typeMatch(SymbolTableEntryRef &lref, ExpInfo *rexp);
@@ -1430,7 +1430,7 @@ int SA_44(GrammaSymbol &sym) {
     GrammaSymbol expression = (*stack)[n - 2].sym;
     sym.code = sym.end = -1;
     SymbolTableEntryRef expRef = expression.attr.exp->ref;
-    if((*expRef.table)[expRef.index].dataType != DT_BOOL) {
+    if(!typeMatch(DT_BOOL, expression.attr.exp)) {
         printf("Line %d, Col %d: The type of while-condition should be a boolean value.\n", row, col);
         return -2;
     }
