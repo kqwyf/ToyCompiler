@@ -1,0 +1,23 @@
+struct a {
+    bool a;
+    int b;
+};
+
+struct b {
+    bool a;
+    int b;
+};
+
+int main() {
+    int c;
+    struct a m;
+    struct b a;
+    m.b = 1;
+    a.b = m.b;
+    if(a.b > 1)
+        c = 1;
+    else if(a.a)
+        c = 2;
+    else if(m.a && a.a)
+        c = 3;
+}

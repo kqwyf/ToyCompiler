@@ -1,7 +1,6 @@
 // TODO: add array support (to all productions which use EXPRESSION)
 // TODO: add auto type conversion
 // TODO: add nested struct support (production #54)
-// TODO: when id.id is reduced as a right-value, allocate a temp symbol for it
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -45,13 +44,16 @@ int link(GrammaSymbol &a, int b);
 int link(int a, GrammaSymbol &b);
 int link(int a, int b);
 int sizeOf(TypeInfo *typ);
+int sizeOf(SymbolDataType dataType);
 void enterTable(SymbolTable *table);
 int quitTable();
 pair<int, int> evalBoolExp(ExpInfo *exp, int next);
 pair<int, int> genBoolJmpCode(ExpInfo *exp);
+pair<int, SymbolDataType> genMovsCode(ExpInfo *exp);
 bool typeMatch(ExpInfo *lexp, ExpInfo *rexp);
 bool typeMatch(SymbolDataType ldataType, ExpInfo *rexp);
 bool typeMatch(SymbolTableEntryRef &lref, ExpInfo *rexp);
+SymbolDataType typeOf(ExpInfo *exp);
 
 #ifdef PRINT_PRODUCTIONS
 int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTable *iTable, ProductionSequence &seq) {
@@ -299,6 +301,17 @@ int sizeOf(TypeInfo *typ) {
     return size;
 }
 
+int sizeOf(SymbolDataType dataType) {
+    if(dataType == DT_INT)
+        return INT_SIZE;
+    else if(dataType == DT_FLOAT)
+        return FLOAT_SIZE;
+    else if(dataType == DT_BOOL)
+        return BOOL_SIZE;
+    else
+        return -1;
+}
+
 void enterTable(SymbolTable *table) {
     symbolTable = table;
     symbolTable->busy = true;
@@ -358,132 +371,40 @@ pair<int, int> genBoolJmpCode(ExpInfo *exp) {
         return {preCode, falseCode};
 }
 
+pair<int, SymbolDataType> genMovsCode(ExpInfo *exp) {
+    int movCode = -1;
+    SymbolTableEntryRef ref = exp->ref;
+    SymbolDataType realType = typeOf(exp);
+    if((*ref.table)[ref.index].dataType == DT_ARRAY) { // array element
+        // TODO: add array support: MOVS
+    } else if(exp->offset >= 0) { // struct element
+        SymbolTableEntryRef tmpRef = symbolTable->newTemp(realType, sizeOf(realType));
+        movCode = instTable->gen(OP_MOVS, tmpRef, ref, {NULL, exp->offset});
+        symbolTable->freeTemp();
+        exp->ref = tmpRef;
+        exp->offset = -1;
+        exp->isTemp = true;
+    }
+    return {movCode, realType};
+}
+
 bool typeMatch(ExpInfo *lexp, ExpInfo *rexp) {
     SymbolTableEntryRef &lref = lexp->ref;
     SymbolTableEntryRef &rref = rexp->ref;
-    SymbolDataType ldataType = (*lref.table)[lref.index].dataType;
-    SymbolDataType rdataType = (*rref.table)[rref.index].dataType;
+    SymbolDataType ldataType = typeOf(lexp);
+    SymbolDataType rdataType = typeOf(rexp);
     if(ldataType == DT_NONE || rdataType == DT_NONE
             || ldataType == DT_STRUCT_DEF || rdataType == DT_STRUCT_DEF
-            || ldataType == DT_BLOCK || rdataType == DT_BLOCK) {
+            || ldataType == DT_BLOCK || rdataType == DT_BLOCK
+            || ldataType == DT_ARRAY || rdataType == DT_ARRAY) {
         return false;
-    } else if(ldataType == DT_ARRAY) {
-        if(lexp->ndim != (*lref.table)[lref.index].attr.arr->ndim)
-            return false;
-        ldataType = (*lref.table)[lref.index].attr.arr->dataType;
-        if(rdataType == DT_ARRAY) {
-            if(rexp->ndim != (*rref.table)[rref.index].attr.arr->ndim)
-                return false;
-            rdataType = (*rref.table)[rref.index].attr.arr->dataType;
-        } else if(rdataType == DT_STRUCT) {
-            if(rexp->offset == -1)
-                return false;
-            // binary search
-            SymbolTable *table = (*rref.table)[rref.index].attr.table;
-            int l = 0, r = table->size() - 1;
-            while(l < r) {
-                int mid = (l + r) / 2;
-                if((*table)[mid].offset == rexp->offset)
-                    break;
-                else if((*table)[mid].offset > rexp->offset)
-                    r = mid - 1;
-                else if(l == mid)
-                    break;
-                else
-                    l = mid;
-            }
-            if((*table)[l].offset != rexp->offset) {
-                // TODO: add nested struct / array support
-                // rdataType = xxx;
-            } else {
-                rdataType = (*table)[l].dataType;
-                if(rdataType == DT_NONE || rdataType == DT_BLOCK || rdataType == DT_STRUCT_DEF) {
-#ifdef DEBUG
-                    fprintf(stderr, "[ERROR] Invalid type in struct.\n");
-#endif
-                    return false;
-                } else if(rdataType == DT_ARRAY)
-                    rdataType = (*table)[l].attr.arr->dataType;
-                else if(rdataType == DT_STRUCT)
-                    ; // TODO: add nested struct support
-            }
-        }
     } else if(ldataType == DT_STRUCT) {
-        if(lexp->offset == -1) {
-            if(rdataType == DT_STRUCT && rexp->offset == -1) {
-                return (*lref.table)[lref.index].attr.table == (*rref.table)[rref.index].attr.table;
-            } else
-                return false;
-        } else {
-            // binary search
-            SymbolTable *table = (*lref.table)[lref.index].attr.table;
-            int l = 0, r = table->size() - 1;
-            while(l < r) {
-                int mid = (l + r) / 2;
-                if((*table)[mid].offset == lexp->offset)
-                    break;
-                else if((*table)[mid].offset > lexp->offset)
-                    r = mid - 1;
-                else if(l == mid)
-                    break;
-                else
-                    l = mid;
-            }
-            if((*table)[l].offset != lexp->offset) {
-                // TODO: add nested struct / array support
-                // ldataType = xxx;
-            } else {
-                ldataType = (*table)[l].dataType;
-                if(ldataType == DT_NONE || ldataType == DT_BLOCK || ldataType == DT_STRUCT_DEF) {
-#ifdef DEBUG
-                    fprintf(stderr, "[ERROR] Invalid type in struct.\n");
-#endif
-                    return false;
-                } else if(ldataType == DT_ARRAY)
-                    ldataType = (*table)[l].attr.arr->dataType;
-                else if(ldataType == DT_STRUCT)
-                    ; // TODO: add nested struct support
-            }
-        }
-        if(rdataType == DT_ARRAY) {
-            if(rexp->ndim != (*rref.table)[rref.index].attr.arr->ndim)
-                return false;
-            rdataType = (*rref.table)[rref.index].attr.arr->dataType;
-        } else if(rdataType == DT_STRUCT) {
-            if(rexp->offset == -1)
-                return false;
-            // binary search
-            SymbolTable *table = (*rref.table)[rref.index].attr.table;
-            int l = 0, r = table->size() - 1;
-            while(l < r) {
-                int mid = (l + r) / 2;
-                if((*table)[mid].offset == rexp->offset)
-                    break;
-                else if((*table)[mid].offset > rexp->offset)
-                    r = mid - 1;
-                else if(l == mid)
-                    break;
-                else
-                    l = mid;
-            }
-            if((*table)[l].offset != rexp->offset) {
-                // TODO: add nested struct / array support
-                // rdataType = xxx;
-            } else {
-                rdataType = (*table)[l].dataType;
-                if(rdataType == DT_NONE || rdataType == DT_BLOCK || rdataType == DT_STRUCT_DEF) {
-#ifdef DEBUG
-                    fprintf(stderr, "[ERROR] Invalid type in struct.\n");
-#endif
-                    return false;
-                } else if(rdataType == DT_ARRAY)
-                    rdataType = (*table)[l].attr.arr->dataType;
-                else if(rdataType == DT_STRUCT)
-                    ; // TODO: add nested struct support
-            }
-        }
+        if(rdataType == DT_STRUCT) {
+            return (*lref.table)[lref.index].attr.table == (*rref.table)[rref.index].attr.table;
+        } else
+            return false;
     }
-    // when control reaches here, the problem is reduced as the basic-types matching problem
+    // now the problem is reduced as the basic-types matching problem
     if(ldataType == DT_BOOL && rdataType != DT_BOOL)
         return false;
     return true;
@@ -506,6 +427,50 @@ bool typeMatch(SymbolTableEntryRef &lref, ExpInfo *rexp) {
     exp.ndim = 0;
     bool result = typeMatch(&exp, rexp);
     return result;
+}
+
+SymbolDataType typeOf(ExpInfo *exp) {
+    SymbolTableEntry &entry = (*(exp->ref.table))[exp->ref.index];
+    if(exp->offset < 0)
+        return entry.dataType;
+    else if(entry.dataType == DT_ARRAY) {
+        if(exp->ndim == 0)
+            return DT_ARRAY;
+        else if(exp->ndim != entry.attr.arr->ndim)
+            return DT_NONE;
+        else
+            return entry.attr.arr->dataType;
+    }
+    SymbolTable *table = entry.attr.table;
+    int offset = exp->offset;
+    // recursive binary search
+    while(true) {
+        int l = 0, r = table->size() - 1;
+        while(l < r) {
+            int mid = (l + r) / 2;
+            if((*table)[mid].offset == offset) {
+                l = mid;
+                break;
+            }
+            else if((*table)[mid].offset > offset)
+                r = mid - 1;
+            else if((*table)[mid + 1].offset > offset) { // nested struct / array
+                l = r = mid;
+                break;
+            } else
+                l = mid + 1;
+        }
+        if((*table)[l].offset == offset && (*table)[l].dataType != DT_STRUCT) {
+            if((*table)[l].dataType == DT_ARRAY)
+                return (*table)[l].attr.arr->dataType;
+            else {
+                return (*table)[l].dataType;
+            }
+        } else {
+            offset -= (*table)[l].offset;
+            table = (*table)[l].attr.table;
+        }
+    }
 }
 
 GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
@@ -1464,21 +1429,7 @@ int SA_45(GrammaSymbol &sym) {
     sym.end = expression_s.end;
     link(sym, expression);
     SymbolTableEntryRef expRef = expression.attr.exp->ref;
-    if((*expRef.table)[expRef.index].dataType == DT_BOOL) {
-        if(expression.attr.exp->isTemp) {
-            int trueCode = instTable->gen(OP_TRU, NULL_REF, NULL_REF, expression.attr.exp->ref);
-            int jmpCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
-            int falseCode = instTable->gen(OP_FAL, NULL_REF, NULL_REF, expression.attr.exp->ref);
-            link(sym, trueCode);
-            link(sym, jmpCode);
-            link(sym, falseCode);
-            sym.nextList.push_back(jmpCode);
-            int trueLabel = instTable->newLabel(trueCode);
-            int falseLabel = instTable->newLabel(falseCode);
-            instTable->backPatch(expression.attr.exp->trueList, trueLabel);
-            instTable->backPatch(expression.attr.exp->falseList, falseLabel);
-        }
-    } else if(expression.attr.exp->ndim > 0) {
+    if((*expRef.table)[expRef.index].dataType == DT_ARRAY) { // array element
         if(expression.attr.exp->ndim < (*expRef.table)[expRef.index].attr.arr->ndim) {
             printf("Line %d, Col %d: Too few dimensions for array.\n", row, col);
             return -2;
@@ -1486,6 +1437,30 @@ int SA_45(GrammaSymbol &sym) {
             printf("Line %d, Col %d: Too many dimensions for array.\n", row, col);
             return -2;
         }
+        // TODO: array support: MOVS
+    } else if(expression.attr.exp->offset >= 0) { // struct element
+        SymbolDataType dataType = typeOf(expression.attr.exp);
+        if(expression.attr.exp->isTemp)
+            symbolTable->freeTemp();
+        SymbolTableEntryRef tmpRef = symbolTable->newTemp(dataType, sizeOf(dataType));
+        int movCode = instTable->gen(OP_MOVS, tmpRef, expRef, {NULL, expression.attr.exp->offset});
+        link(sym, movCode);
+        expression.attr.exp->ref = expRef = tmpRef;
+        expression.attr.exp->isTemp = true;
+        expression.attr.exp->ndim = 0;
+        expression.attr.exp->offset = -1;
+    } else if((*expRef.table)[expRef.index].dataType == DT_BOOL && expression.attr.exp->isTemp) {
+        int trueCode = instTable->gen(OP_TRU, NULL_REF, NULL_REF, expression.attr.exp->ref);
+        int jmpCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
+        int falseCode = instTable->gen(OP_FAL, NULL_REF, NULL_REF, expression.attr.exp->ref);
+        link(sym, trueCode);
+        link(sym, jmpCode);
+        link(sym, falseCode);
+        sym.nextList.push_back(jmpCode);
+        int trueLabel = instTable->newLabel(trueCode);
+        int falseLabel = instTable->newLabel(falseCode);
+        instTable->backPatch(expression.attr.exp->trueList, trueLabel);
+        instTable->backPatch(expression.attr.exp->falseList, falseLabel);
     }
     if(!expression_s.nextList.empty()) {
         int label = instTable->newLabel(expression.code);
@@ -1507,21 +1482,7 @@ int SA_46(GrammaSymbol &sym) {
     sym.code = expression.code;
     sym.end = expression.end;
     SymbolTableEntryRef expRef = expression.attr.exp->ref;
-    if((*expRef.table)[expRef.index].dataType == DT_BOOL) {
-        if(expression.attr.exp->isTemp) {
-            int trueCode = instTable->gen(OP_TRU, NULL_REF, NULL_REF, expression.attr.exp->ref);
-            int jmpCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
-            int falseCode = instTable->gen(OP_FAL, NULL_REF, NULL_REF, expression.attr.exp->ref);
-            link(sym, trueCode);
-            link(sym, jmpCode);
-            link(sym, falseCode);
-            sym.nextList.push_back(jmpCode);
-            int trueLabel = instTable->newLabel(trueCode);
-            int falseLabel = instTable->newLabel(falseCode);
-            instTable->backPatch(expression.attr.exp->trueList, trueLabel);
-            instTable->backPatch(expression.attr.exp->falseList, falseLabel);
-        }
-    } else if(expression.attr.exp->ndim > 0) {
+    if((*expRef.table)[expRef.index].dataType == DT_ARRAY) { // array element
         if(expression.attr.exp->ndim < (*expRef.table)[expRef.index].attr.arr->ndim) {
             printf("Line %d, Col %d: Too few dimensions for array.\n", row, col);
             return -2;
@@ -1529,6 +1490,30 @@ int SA_46(GrammaSymbol &sym) {
             printf("Line %d, Col %d: Too many dimensions for array.\n", row, col);
             return -2;
         }
+        // TODO: array support: MOVS
+    } else if(expression.attr.exp->offset >= 0) { // struct element
+        SymbolDataType dataType = typeOf(expression.attr.exp);
+        if(expression.attr.exp->isTemp)
+            symbolTable->freeTemp();
+        SymbolTableEntryRef tmpRef = symbolTable->newTemp(dataType, sizeOf(dataType));
+        int movCode = instTable->gen(OP_MOVS, tmpRef, expRef, {NULL, expression.attr.exp->offset});
+        link(sym, movCode);
+        expression.attr.exp->ref = expRef = tmpRef;
+        expression.attr.exp->isTemp = true;
+        expression.attr.exp->ndim = 0;
+        expression.attr.exp->offset = -1;
+    } else if((*expRef.table)[expRef.index].dataType == DT_BOOL && expression.attr.exp->isTemp) {
+        int trueCode = instTable->gen(OP_TRU, NULL_REF, NULL_REF, expression.attr.exp->ref);
+        int jmpCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
+        int falseCode = instTable->gen(OP_FAL, NULL_REF, NULL_REF, expression.attr.exp->ref);
+        link(sym, trueCode);
+        link(sym, jmpCode);
+        link(sym, falseCode);
+        sym.nextList.push_back(jmpCode);
+        int trueLabel = instTable->newLabel(trueCode);
+        int falseLabel = instTable->newLabel(falseCode);
+        instTable->backPatch(expression.attr.exp->trueList, trueLabel);
+        instTable->backPatch(expression.attr.exp->falseList, falseLabel);
     }
     sym.nextList.splice(sym.nextList.end(), expression.nextList);
     sym.attr.exps->expList.push_back(expression.attr.exp);
@@ -1717,21 +1702,23 @@ int SA_53(GrammaSymbol &sym) {
     GrammaSymbol expression2 = (*stack)[n - 1].sym;
     sym.code = expression2.code;
     sym.end = expression2.end;
-    if(expression2.attr.exp->isTemp)
-        symbolTable->freeTemp();
+    SymbolTableEntryRef ref = expression2.attr.exp->ref;
     if(!typeMatch(DT_BOOL, expression2.attr.exp)) {
         printf("Line %d, Col %d: Invalid operand type.\n", row, col);
         return -2;
+    }
+    // now it must be a boolean value
+    if(expression2.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else {
+        pair<int, int> code = genBoolJmpCode(expression2.attr.exp);
+        link(sym, code.first);
+        sym.end = code.second;
     }
     sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
     sym.attr.exp->isTemp = true;
     sym.attr.exp->ndim = 0;
     sym.attr.exp->offset = -1;
-    if(!expression2.attr.exp->isTemp) {
-        pair<int, int> code = genBoolJmpCode(expression2.attr.exp);
-        link(sym, code.first);
-        sym.end = code.second;
-    }
     sym.nextList.splice(sym.nextList.end(), expression2.nextList);
     sym.attr.exp->trueList.splice(sym.attr.exp->trueList.end(), expression2.attr.exp->falseList);
     sym.attr.exp->falseList.splice(sym.attr.exp->falseList.end(), expression2.attr.exp->trueList);
@@ -1756,8 +1743,14 @@ int SA_54(GrammaSymbol &sym) {
     int size = (*ref.table)[ref.index].size;
     if(expression2.attr.exp->isTemp)
         symbolTable->freeTemp();
+    else if((*ref.table)[ref.index].dataType == DT_ARRAY || expression2.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression2.attr.exp);
+        int movsCode = info.first;
+        ref = expression2.attr.exp->ref;
+        link(sym, movsCode);
+    }
     sym.attr.exp->ref = symbolTable->newTemp(dataType, size);
-    int code = instTable->gen(OP_NEG, expression2.attr.exp->ref, NULL_REF, sym.attr.exp->ref);
+    int code = instTable->gen(OP_NEG, ref, NULL_REF, sym.attr.exp->ref);
     if(!expression2.nextList.empty()) {
         int label = instTable->newLabel(code);
         instTable->backPatch(expression2.nextList, label);
@@ -1854,21 +1847,38 @@ int SA_59(GrammaSymbol &sym) {
     sym.attr.exp->offset = -1;
     SymbolTableEntryRef ref4 = expression4.attr.exp->ref;
     SymbolTableEntryRef ref3 = expression3.attr.exp->ref;
+    SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
+    SymbolDataType dataType3 = (*ref3.table)[ref3.index].dataType;
     if(!typeMatch(DT_FLOAT, expression4.attr.exp) || !typeMatch(DT_FLOAT, expression3.attr.exp)) {
         printf("Line %d, Col %d: Invalid operand types.\n", row, col);
         return -2;
     }
-    // TODO: add complicated type support
-    SymbolDataType dataType = DT_INT;
-    int size = INT_SIZE;
-    if((*ref4.table)[ref4.index].dataType == DT_FLOAT || (*ref3.table)[ref3.index].dataType == DT_FLOAT) {
-        dataType = DT_FLOAT;
-        size = FLOAT_SIZE;
+    if(expression3.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref3.table)[ref3.index].dataType == DT_ARRAY || expression3.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression4.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression3.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref3 = expression3.attr.exp->ref;
+        dataType3 = info.second;
+        link(sym, movsCode);
     }
     if(expression4.attr.exp->isTemp)
         symbolTable->freeTemp();
-    if(expression3.attr.exp->isTemp)
-        symbolTable->freeTemp();
+    else if((*ref4.table)[ref4.index].dataType == DT_ARRAY || expression4.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression4.attr.exp);
+        int movsCode = info.first;
+        ref4 = expression4.attr.exp->ref;
+        dataType4 = info.second;
+        link(sym, movsCode);
+    }
+    SymbolDataType dataType = DT_INT;
+    int size = INT_SIZE;
+    if(dataType4 == DT_FLOAT || dataType3 == DT_FLOAT) {
+        dataType = DT_FLOAT;
+        size = FLOAT_SIZE;
+    }
     sym.attr.exp->ref = symbolTable->newTemp(dataType, size);
     int code = instTable->gen(OP_MUL, ref4, ref3, sym.attr.exp->ref);
     if(!expression4.nextList.empty()) {
@@ -1899,21 +1909,38 @@ int SA_60(GrammaSymbol &sym) {
     sym.attr.exp->offset = -1;
     SymbolTableEntryRef ref4 = expression4.attr.exp->ref;
     SymbolTableEntryRef ref3 = expression3.attr.exp->ref;
+    SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
+    SymbolDataType dataType3 = (*ref3.table)[ref3.index].dataType;
     if(!typeMatch(DT_FLOAT, expression4.attr.exp) || !typeMatch(DT_FLOAT, expression3.attr.exp)) {
         printf("Line %d, Col %d: Invalid operand types.\n", row, col);
         return -2;
     }
-    // TODO: add complicated type support
-    SymbolDataType dataType = DT_INT;
-    int size = INT_SIZE;
-    if((*ref4.table)[ref4.index].dataType == DT_FLOAT || (*ref3.table)[ref3.index].dataType == DT_FLOAT) {
-        dataType = DT_FLOAT;
-        size = FLOAT_SIZE;
+    if(expression3.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref3.table)[ref3.index].dataType == DT_ARRAY || expression3.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression4.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression3.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref3 = expression3.attr.exp->ref;
+        dataType3 = info.second;
+        link(sym, movsCode);
     }
     if(expression4.attr.exp->isTemp)
         symbolTable->freeTemp();
-    if(expression3.attr.exp->isTemp)
-        symbolTable->freeTemp();
+    else if((*ref4.table)[ref4.index].dataType == DT_ARRAY || expression4.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression4.attr.exp);
+        int movsCode = info.first;
+        ref4 = expression4.attr.exp->ref;
+        dataType4 = info.second;
+        link(sym, movsCode);
+    }
+    SymbolDataType dataType = DT_INT;
+    int size = INT_SIZE;
+    if(dataType4 == DT_FLOAT || dataType3 == DT_FLOAT) {
+        dataType = DT_FLOAT;
+        size = FLOAT_SIZE;
+    }
     sym.attr.exp->ref = symbolTable->newTemp(dataType, size);
     int code = instTable->gen(OP_DIV, ref4, ref3, sym.attr.exp->ref);
     if(!expression4.nextList.empty()) {
@@ -1958,21 +1985,38 @@ int SA_62(GrammaSymbol &sym) {
     sym.attr.exp->offset = -1;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     SymbolTableEntryRef ref4 = expression4.attr.exp->ref;
+    SymbolDataType dataType5 = (*ref5.table)[ref5.index].dataType;
+    SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
     if(!typeMatch(DT_FLOAT, expression5.attr.exp) || !typeMatch(DT_FLOAT, expression4.attr.exp)) {
         printf("Line %d, Col %d: Invalid operand types\n", row, col);
         return -2;
     }
-    // TODO: add complicated type support
-    SymbolDataType dataType = DT_INT;
-    int size = INT_SIZE;
-    if((*ref5.table)[ref5.index].dataType == DT_FLOAT || (*ref4.table)[ref4.index].dataType == DT_FLOAT) {
-        dataType = DT_FLOAT;
-        size = FLOAT_SIZE;
+    if(expression4.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref4.table)[ref4.index].dataType == DT_ARRAY || expression4.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression5.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression4.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref4 = expression4.attr.exp->ref;
+        dataType4 = info.second;
+        link(sym, movsCode);
     }
     if(expression5.attr.exp->isTemp)
         symbolTable->freeTemp();
-    if(expression4.attr.exp->isTemp)
-        symbolTable->freeTemp();
+    else if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+        int movsCode = info.first;
+        ref5 = expression5.attr.exp->ref;
+        dataType5 = info.second;
+        link(sym, movsCode);
+    }
+    SymbolDataType dataType = DT_INT;
+    int size = INT_SIZE;
+    if(dataType5 == DT_FLOAT || dataType4 == DT_FLOAT) {
+        dataType = DT_FLOAT;
+        size = FLOAT_SIZE;
+    }
     sym.attr.exp->ref = symbolTable->newTemp(dataType, size);
     int code = instTable->gen(OP_ADD, ref5, ref4, sym.attr.exp->ref);
     if(!expression5.nextList.empty()) {
@@ -2003,21 +2047,38 @@ int SA_63(GrammaSymbol &sym) {
     sym.attr.exp->offset = -1;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     SymbolTableEntryRef ref4 = expression4.attr.exp->ref;
+    SymbolDataType dataType5 = (*ref5.table)[ref5.index].dataType;
+    SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
     if(!typeMatch(DT_FLOAT, expression5.attr.exp) || !typeMatch(DT_FLOAT, expression4.attr.exp)) {
         printf("Line %d, Col %d: Invalid operand types\n", row, col);
         return -2;
     }
-    // TODO: add complicated type support
-    SymbolDataType dataType = DT_INT;
-    int size = INT_SIZE;
-    if((*ref5.table)[ref5.index].dataType == DT_FLOAT || (*ref4.table)[ref4.index].dataType == DT_FLOAT) {
-        dataType = DT_FLOAT;
-        size = FLOAT_SIZE;
+    if(expression4.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref4.table)[ref4.index].dataType == DT_ARRAY || expression4.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression5.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression4.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref4 = expression4.attr.exp->ref;
+        dataType4 = info.second;
+        link(sym, movsCode);
     }
     if(expression5.attr.exp->isTemp)
         symbolTable->freeTemp();
-    if(expression4.attr.exp->isTemp)
-        symbolTable->freeTemp();
+    else if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+        int movsCode = info.first;
+        ref5 = expression5.attr.exp->ref;
+        dataType5 = info.second;
+        link(sym, movsCode);
+    }
+    SymbolDataType dataType = DT_INT;
+    int size = INT_SIZE;
+    if(dataType5 == DT_FLOAT || dataType4 == DT_FLOAT) {
+        dataType = DT_FLOAT;
+        size = FLOAT_SIZE;
+    }
     sym.attr.exp->ref = symbolTable->newTemp(dataType, size);
     int code = instTable->gen(OP_SUB, ref5, ref4, sym.attr.exp->ref);
     if(!expression5.nextList.empty()) {
@@ -2066,11 +2127,28 @@ int SA_65(GrammaSymbol &sym) {
         printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
         return -2;
     }
-    if(expression6.attr.exp->isTemp)
-        symbolTable->freeTemp();
-    if(expression5.attr.exp->isTemp)
-        symbolTable->freeTemp();
-    sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
+    bool skip5 = false, skip6 = false;
+    if(!expression5.attr.exp->isTemp) {
+        if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+            skip5 = true; // we free the temp symbol here and copy the value out of the struct / array
+                          // so we don't do it later
+            symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression6.attr.exp))); // placeholder
+            pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+            int movsCode = info.first;
+            symbolTable->freeTemp();
+            ref5 = expression5.attr.exp->ref;
+            link(sym, movsCode);
+        }
+    }
+    if(!expression6.attr.exp->isTemp) {
+        if((*ref6.table)[ref6.index].dataType == DT_ARRAY || expression6.attr.exp->offset >= 0) {
+            skip6 = true;
+            pair<int, SymbolDataType> info = genMovsCode(expression6.attr.exp);
+            int movsCode = info.first;
+            ref6 = expression6.attr.exp->ref;
+            link(sym, movsCode);
+        }
+    }
     int trueCode = instTable->gen(OP_JE, ref6, ref5, NULL_REF);
     int falseCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
     sym.attr.exp->trueList.push_back(trueCode);
@@ -2084,21 +2162,28 @@ int SA_65(GrammaSymbol &sym) {
         instTable->backPatch(expression5.nextList, label);
     }
     int code5 = -1, end5 = -1, code6 = -1, end6 = -1, code = -1, end = -1;
-    if((*ref5.table)[ref5.index].dataType == DT_BOOL && expression5.attr.exp->isTemp) {
-        pair<int, int> tmpCode = evalBoolExp(expression5.attr.exp, trueCode);
-        code5 = tmpCode.first;
-        end5 = tmpCode.second;
+    if(!skip5 && expression5.attr.exp->isTemp) {
+        symbolTable->freeTemp();
+        if((*ref5.table)[ref5.index].dataType == DT_BOOL) {
+            pair<int, int> tmpCode = evalBoolExp(expression5.attr.exp, trueCode);
+            code5 = tmpCode.first;
+            end5 = tmpCode.second;
+        }
     }
-    if((*ref6.table)[ref6.index].dataType == DT_BOOL && expression6.attr.exp->isTemp) {
-        pair<int, int> tmpCode;
-        if(code5 == -1)
-            tmpCode = evalBoolExp(expression6.attr.exp, trueCode);
-        else
-            tmpCode = evalBoolExp(expression6.attr.exp, code5);
-        code6 = tmpCode.first;
-        end6 = tmpCode.second;
+    if(!skip6 && expression6.attr.exp->isTemp) {
+        symbolTable->freeTemp();
+        if((*ref6.table)[ref6.index].dataType == DT_BOOL) {
+            pair<int, int> tmpCode;
+            if(code5 == -1)
+                tmpCode = evalBoolExp(expression6.attr.exp, trueCode);
+            else
+                tmpCode = evalBoolExp(expression6.attr.exp, code5);
+            code6 = tmpCode.first;
+            end6 = tmpCode.second;
+        }
     }
     link(end6, code5);
+    sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
     code = (code6 == -1) ? code5 : code6;
     end = (end5 == -1) ? end6 : end5;
     if(code != -1) {
@@ -2130,11 +2215,28 @@ int SA_66(GrammaSymbol &sym) {
         printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
         return -2;
     }
-    if(expression6.attr.exp->isTemp)
-        symbolTable->freeTemp();
-    if(expression5.attr.exp->isTemp)
-        symbolTable->freeTemp();
-    sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
+    bool skip5 = false, skip6 = false;
+    if(!expression5.attr.exp->isTemp) {
+        if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+            skip5 = true; // we free the temp symbol here and copy the value out of the struct / array
+                          // so we don't do it later
+            symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression6.attr.exp))); // placeholder
+            pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+            int movsCode = info.first;
+            symbolTable->freeTemp();
+            ref5 = expression5.attr.exp->ref;
+            link(sym, movsCode);
+        }
+    }
+    if(!expression6.attr.exp->isTemp) {
+        if((*ref6.table)[ref6.index].dataType == DT_ARRAY || expression6.attr.exp->offset >= 0) {
+            skip6 = true;
+            pair<int, SymbolDataType> info = genMovsCode(expression6.attr.exp);
+            int movsCode = info.first;
+            ref6 = expression6.attr.exp->ref;
+            link(sym, movsCode);
+        }
+    }
     int trueCode = instTable->gen(OP_JNE, ref6, ref5, NULL_REF);
     int falseCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
     sym.attr.exp->trueList.push_back(trueCode);
@@ -2148,21 +2250,28 @@ int SA_66(GrammaSymbol &sym) {
         instTable->backPatch(expression5.nextList, label);
     }
     int code5 = -1, end5 = -1, code6 = -1, end6 = -1, code = -1, end = -1;
-    if((*ref5.table)[ref5.index].dataType == DT_BOOL && expression5.attr.exp->isTemp) {
-        pair<int, int> tmpCode = evalBoolExp(expression5.attr.exp, trueCode);
-        code5 = tmpCode.first;
-        end5 = tmpCode.second;
+    if(!skip5 && expression5.attr.exp->isTemp) {
+        symbolTable->freeTemp();
+        if((*ref5.table)[ref5.index].dataType == DT_BOOL) {
+            pair<int, int> tmpCode = evalBoolExp(expression5.attr.exp, trueCode);
+            code5 = tmpCode.first;
+            end5 = tmpCode.second;
+        }
     }
-    if((*ref6.table)[ref6.index].dataType == DT_BOOL && expression6.attr.exp->isTemp) {
-        pair<int, int> tmpCode;
-        if(code5 == -1)
-            tmpCode = evalBoolExp(expression6.attr.exp, trueCode);
-        else
-            tmpCode = evalBoolExp(expression6.attr.exp, code5);
-        code6 = tmpCode.first;
-        end6 = tmpCode.second;
+    if(!skip6 && expression6.attr.exp->isTemp) {
+        symbolTable->freeTemp();
+        if((*ref6.table)[ref6.index].dataType == DT_BOOL) {
+            pair<int, int> tmpCode;
+            if(code5 == -1)
+                tmpCode = evalBoolExp(expression6.attr.exp, trueCode);
+            else
+                tmpCode = evalBoolExp(expression6.attr.exp, code5);
+            code6 = tmpCode.first;
+            end6 = tmpCode.second;
+        }
     }
     link(end6, code5);
+    sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
     code = (code6 == -1) ? code5 : code6;
     end = (end5 == -1) ? end6 : end5;
     if(code != -1) {
@@ -2194,10 +2303,24 @@ int SA_67(GrammaSymbol &sym) {
         printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
         return -2;
     }
-    if(expression6.attr.exp->isTemp)
-        symbolTable->freeTemp();
     if(expression5.attr.exp->isTemp)
         symbolTable->freeTemp();
+    else if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression6.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref5 = expression5.attr.exp->ref;
+        link(sym, movsCode);
+    }
+    if(expression6.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref6.table)[ref6.index].dataType == DT_ARRAY || expression6.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression6.attr.exp);
+        int movsCode = info.first;
+        ref6 = expression6.attr.exp->ref;
+        link(sym, movsCode);
+    }
     sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
     int trueCode = instTable->gen(OP_JG, ref6, ref5, NULL_REF);
     int falseCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
@@ -2236,10 +2359,24 @@ int SA_68(GrammaSymbol &sym) {
         printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
         return -2;
     }
-    if(expression6.attr.exp->isTemp)
-        symbolTable->freeTemp();
     if(expression5.attr.exp->isTemp)
         symbolTable->freeTemp();
+    else if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression6.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref5 = expression5.attr.exp->ref;
+        link(sym, movsCode);
+    }
+    if(expression6.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref6.table)[ref6.index].dataType == DT_ARRAY || expression6.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression6.attr.exp);
+        int movsCode = info.first;
+        ref6 = expression6.attr.exp->ref;
+        link(sym, movsCode);
+    }
     sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
     int trueCode = instTable->gen(OP_JGE, ref6, ref5, NULL_REF);
     int falseCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
@@ -2278,10 +2415,24 @@ int SA_69(GrammaSymbol &sym) {
         printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
         return -2;
     }
-    if(expression6.attr.exp->isTemp)
-        symbolTable->freeTemp();
     if(expression5.attr.exp->isTemp)
         symbolTable->freeTemp();
+    else if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression6.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref5 = expression5.attr.exp->ref;
+        link(sym, movsCode);
+    }
+    if(expression6.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref6.table)[ref6.index].dataType == DT_ARRAY || expression6.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression6.attr.exp);
+        int movsCode = info.first;
+        ref6 = expression6.attr.exp->ref;
+        link(sym, movsCode);
+    }
     sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
     int trueCode = instTable->gen(OP_JL, ref6, ref5, NULL_REF);
     int falseCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
@@ -2320,10 +2471,24 @@ int SA_70(GrammaSymbol &sym) {
         printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
         return -2;
     }
-    if(expression6.attr.exp->isTemp)
-        symbolTable->freeTemp();
     if(expression5.attr.exp->isTemp)
         symbolTable->freeTemp();
+    else if((*ref5.table)[ref5.index].dataType == DT_ARRAY || expression5.attr.exp->offset >= 0) {
+        symbolTable->newTemp(DT_NONE, sizeOf(typeOf(expression6.attr.exp))); // placeholder
+        pair<int, SymbolDataType> info = genMovsCode(expression5.attr.exp);
+        int movsCode = info.first;
+        symbolTable->freeTemp();
+        ref5 = expression5.attr.exp->ref;
+        link(sym, movsCode);
+    }
+    if(expression6.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else if((*ref6.table)[ref6.index].dataType == DT_ARRAY || expression6.attr.exp->offset >= 0) {
+        pair<int, SymbolDataType> info = genMovsCode(expression6.attr.exp);
+        int movsCode = info.first;
+        ref6 = expression6.attr.exp->ref;
+        link(sym, movsCode);
+    }
     sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
     int trueCode = instTable->gen(OP_JLE, ref6, ref5, NULL_REF);
     int falseCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);
@@ -2364,19 +2529,19 @@ int SA_72(GrammaSymbol &sym) {
     int n = stack->size();
     GrammaSymbol expression7 = (*stack)[n - 3].sym;
     GrammaSymbol expression6 = (*stack)[n - 1].sym;
-    if(expression7.attr.exp->isTemp)
-        symbolTable->freeTemp();
-    else {
-        pair<int, int> code = genBoolJmpCode(expression7.attr.exp);
-        link(expression7, code.first);
-        expression7.end = code.second;
-    }
     if(expression6.attr.exp->isTemp)
         symbolTable->freeTemp();
     else {
         pair<int, int> code = genBoolJmpCode(expression6.attr.exp);
         link(expression6, code.first);
         expression6.end = code.second;
+    }
+    if(expression7.attr.exp->isTemp)
+        symbolTable->freeTemp();
+    else {
+        pair<int, int> code = genBoolJmpCode(expression7.attr.exp);
+        link(expression7, code.first);
+        expression7.end = code.second;
     }
     sym.code = expression7.code;
     sym.end = expression7.end;
@@ -2487,15 +2652,24 @@ int SA_75(GrammaSymbol &sym) {
     }
     if(expression8.attr.exp->isTemp)
         symbolTable->freeTemp();
-    int code = -1;
-    if(expression7.attr.exp->offset >= 0) // struct member
-        code = instTable->gen(OP_MOVT, ref7, ref8, {NULL, expression7.attr.exp->offset});
+    bool skip8 = false;
+    int code = -1, end = -1;
+    if(expression7.attr.exp->offset >= 0 && expression8.attr.exp->offset >= 0) { // both are struct members
+        skip8 = true;
+        pair<int, SymbolDataType> info = genMovsCode(expression8.attr.exp);
+        code = info.first;
+        ref8 = expression8.attr.exp->ref;
+        dataType8 = info.second;
+        end = instTable->gen(OP_MOVT, ref7, ref8, {NULL, expression7.attr.exp->offset});
+        link(code, end);
+    } else if(expression7.attr.exp->offset >= 0) // struct member
+        code = end = instTable->gen(OP_MOVT, ref7, ref8, {NULL, expression7.attr.exp->offset});
     else if(expression8.attr.exp->offset >= 0) // struct member
-        code = instTable->gen(OP_MOVS, ref7, ref8, {NULL, expression8.attr.exp->offset});
-    else // TODO: both are struct members
-        code = instTable->gen(OP_MOV, ref7, ref8, NULL_REF);
+        code = end = instTable->gen(OP_MOVS, ref7, ref8, {NULL, expression8.attr.exp->offset});
+    else
+        code = end = instTable->gen(OP_MOV, ref7, ref8, NULL_REF);
     int code8 = -1, end8 = -1;
-    if(dataType8 == DT_BOOL && expression8.attr.exp->isTemp) {
+    if(!skip8 && dataType8 == DT_BOOL && expression8.attr.exp->isTemp) {
         pair<int, int> tmpCode = evalBoolExp(expression8.attr.exp, code);
         code8 = tmpCode.first;
         end8 = tmpCode.second;
@@ -2505,6 +2679,7 @@ int SA_75(GrammaSymbol &sym) {
         sym.end = end8;
     }
     link(sym, code);
+    sym.end = end;
     if(dataType7 == DT_BOOL) {
         int trueCode = instTable->gen(OP_JNZ, sym.attr.exp->ref, NULL_REF, NULL_REF);
         int falseCode = instTable->gen(OP_JMP, NULL_REF, NULL_REF, NULL_REF);

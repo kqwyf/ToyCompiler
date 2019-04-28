@@ -46,6 +46,7 @@ testS:
 	./build/main -s ./tests/27.src | diff - ./tests/27.out
 	./build/main -s ./tests/28.src | diff - ./tests/28.out
 	./build/main -s ./tests/29.src | diff - ./tests/29.out
+	./build/main -s ./tests/30.src | diff - ./tests/30.out
 	@echo ""
 
 testlr:

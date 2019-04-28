@@ -1,0 +1,377 @@
+Token sequence:
+struct          < STRUCT      ,        >
+a               < IDENTIFIER  , 1      >
+{               < LEFTBRACE   ,        >
+bool            < BOOL        ,        >
+a               < IDENTIFIER  , 1      >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+b               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+;               < SEMICOLON   ,        >
+struct          < STRUCT      ,        >
+b               < IDENTIFIER  , 2      >
+{               < LEFTBRACE   ,        >
+bool            < BOOL        ,        >
+a               < IDENTIFIER  , 1      >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+b               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+;               < SEMICOLON   ,        >
+int             < INT         ,        >
+main            < IDENTIFIER  , 3      >
+(               < LEFTPAREN   ,        >
+)               < RIGHTPAREN  ,        >
+{               < LEFTBRACE   ,        >
+int             < INT         ,        >
+c               < IDENTIFIER  , 4      >
+;               < SEMICOLON   ,        >
+struct          < STRUCT      ,        >
+a               < IDENTIFIER  , 1      >
+m               < IDENTIFIER  , 5      >
+;               < SEMICOLON   ,        >
+struct          < STRUCT      ,        >
+b               < IDENTIFIER  , 2      >
+a               < IDENTIFIER  , 1      >
+;               < SEMICOLON   ,        >
+m               < IDENTIFIER  , 5      >
+.               < DOT         ,        >
+b               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+1               < CONSTANT    , 6      >
+;               < SEMICOLON   ,        >
+a               < IDENTIFIER  , 1      >
+.               < DOT         ,        >
+b               < IDENTIFIER  , 2      >
+=               < ASSIGN      ,        >
+m               < IDENTIFIER  , 5      >
+.               < DOT         ,        >
+b               < IDENTIFIER  , 2      >
+;               < SEMICOLON   ,        >
+if              < IF          ,        >
+(               < LEFTPAREN   ,        >
+a               < IDENTIFIER  , 1      >
+.               < DOT         ,        >
+b               < IDENTIFIER  , 2      >
+>               < GREATER     ,        >
+1               < CONSTANT    , 6      >
+)               < RIGHTPAREN  ,        >
+c               < IDENTIFIER  , 4      >
+=               < ASSIGN      ,        >
+1               < CONSTANT    , 6      >
+;               < SEMICOLON   ,        >
+else            < ELSE        ,        >
+if              < IF          ,        >
+(               < LEFTPAREN   ,        >
+a               < IDENTIFIER  , 1      >
+.               < DOT         ,        >
+a               < IDENTIFIER  , 1      >
+)               < RIGHTPAREN  ,        >
+c               < IDENTIFIER  , 4      >
+=               < ASSIGN      ,        >
+2               < CONSTANT    , 7      >
+;               < SEMICOLON   ,        >
+else            < ELSE        ,        >
+if              < IF          ,        >
+(               < LEFTPAREN   ,        >
+m               < IDENTIFIER  , 5      >
+.               < DOT         ,        >
+a               < IDENTIFIER  , 1      >
+&&              < AND         ,        >
+a               < IDENTIFIER  , 1      >
+.               < DOT         ,        >
+a               < IDENTIFIER  , 1      >
+)               < RIGHTPAREN  ,        >
+c               < IDENTIFIER  , 4      >
+=               < ASSIGN      ,        >
+3               < CONSTANT    , 8      >
+;               < SEMICOLON   ,        >
+}               < RIGHTBRACE  ,        >
+
+Symbol table:
+1     a
+2     b
+3     main
+4     c
+5     m
+6     1
+7     2
+8     3
+
+Production sequence:
+TYPE_STRUCT -> struct identifier
+DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
+TYPE_BASIC -> bool
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE_VAR_S -> DECLARE_VAR
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE_VAR_S -> DECLARE_VAR_S DECLARE_VAR
+DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_VAR_S } ;
+DECLARE -> DECLARE_STRUCT
+DECLARE_S -> DECLARE
+TYPE_STRUCT -> struct identifier
+DECLARE_STRUCT_BEGIN -> TYPE_STRUCT {
+TYPE_BASIC -> bool
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE_VAR_S -> DECLARE_VAR
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+DECLARE_VAR_S -> DECLARE_VAR_S DECLARE_VAR
+DECLARE_STRUCT -> DECLARE_STRUCT_BEGIN DECLARE_VAR_S } ;
+DECLARE -> DECLARE_STRUCT
+DECLARE_S -> DECLARE_S DECLARE
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+DECLARE_FUNC_BEGIN -> TYPE identifier (
+DECLARE_FUNC_SIGN -> DECLARE_FUNC_BEGIN ) {
+TYPE_BASIC -> int
+TYPE -> TYPE_BASIC
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT
+TYPE_STRUCT -> struct identifier
+TYPE -> TYPE_STRUCT
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT_S STATEMENT
+TYPE_STRUCT -> struct identifier
+TYPE -> TYPE_STRUCT
+IDENTIFIER_S -> identifier
+DECLARE_VAR -> TYPE IDENTIFIER_S ;
+STATEMENT -> DECLARE_VAR
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION3 -> EXPRESSION3 . identifier
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION3 -> EXPRESSION3 . identifier
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION3 -> EXPRESSION3 . identifier
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+STATEMENT_S -> STATEMENT_S STATEMENT
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION3 -> EXPRESSION3 . identifier
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION6 > EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+SELECT_BEGIN -> if ( EXPRESSION )
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+SELECT_MID -> else
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION3 -> EXPRESSION3 . identifier
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+SELECT_BEGIN -> if ( EXPRESSION )
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+SELECT_MID -> else
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION3 -> EXPRESSION3 . identifier
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION3 -> EXPRESSION3 . identifier
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION7 && EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION -> EXPRESSION8
+SELECT_BEGIN -> if ( EXPRESSION )
+EXPRESSION2 -> identifier
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION2 -> constant
+EXPRESSION3 -> EXPRESSION2
+EXPRESSION4 -> EXPRESSION3
+EXPRESSION5 -> EXPRESSION4
+EXPRESSION6 -> EXPRESSION5
+EXPRESSION7 -> EXPRESSION6
+EXPRESSION8 -> EXPRESSION7
+EXPRESSION8 -> EXPRESSION7 = EXPRESSION8
+EXPRESSION -> EXPRESSION8
+STATEMENT -> EXPRESSION ;
+SELECT -> SELECT_BEGIN STATEMENT
+STATEMENT -> SELECT
+SELECT -> SELECT_BEGIN STATEMENT SELECT_MID STATEMENT
+STATEMENT -> SELECT
+SELECT -> SELECT_BEGIN STATEMENT SELECT_MID STATEMENT
+STATEMENT -> SELECT
+STATEMENT_S -> STATEMENT_S STATEMENT
+DECLARE_FUNC -> DECLARE_FUNC_SIGN STATEMENT_S }
+DECLARE -> DECLARE_FUNC
+DECLARE_S -> DECLARE_S DECLARE
+PROGRAM -> DECLARE_S
+
+Semantic Symbol Tables:
+
+Global Symbol Table (Table 0):
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | 1            | 0        | 
+    1 | INT          | 2            | 4        | 
+    2 | INT          | 3            | 8        | 
+    3 | STRUCT_DEF   | a            | [5     ] | Table 1
+    4 | STRUCT_DEF   | b            | [5     ] | Table 2
+    5 | BLOCK        | main         | .L0      | Table 3, Params#: 0
+
+Table 1:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | BOOL         | a            | 0        | 
+    1 | INT          | b            | 1        | 
+
+Table 2:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | BOOL         | a            | 0        | 
+    1 | INT          | b            | 1        | 
+
+Table 3:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | INT          | (anonymous)  | 0        | 
+    1 | INT          | c            | 4        | 
+    2 | STRUCT       | m            | 8        | Table 1
+    3 | STRUCT       | a            | 13       | Table 2
+    4 | BLOCK        | (anonymous)  |          | Table 4
+    5 | BLOCK        | (anonymous)  |          | Table 5
+
+Table 4:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+
+Table 5:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | BLOCK        | (anonymous)  |          | Table 6
+    1 | BLOCK        | (anonymous)  |          | Table 7
+
+Table 6:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+
+Table 7:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+    0 | BLOCK        | (anonymous)  |          | Table 8
+
+Table 8:
+  #   |   DataType   |     Name     |  Offset  |    Attr
+------+--------------+--------------+----------+------------
+
+
+Instruction sequence:
+.L0    (MOVT,   3:2  ,   0:0  , 1      )
+       (MOVS,   3:4  ,   3:2  , 1      )
+       (MOVT,   3:3  ,   3:4  , 1      )
+       (MOVS,   3:4  ,   3:3  , 1      )
+       (  JG,   3:4  ,   0:0  , .L5    )
+       ( JMP,        ,        , .L6    )
+.L5    ( MOV,   3:1  ,   0:0  ,        )
+       ( JMP,        ,        , .L7    )
+.L6    (MOVS,   5:0  ,   3:3  , 0      )
+       ( JNZ,   5:0  ,        , .L3    )
+       ( JMP,        ,        , .L4    )
+.L3    ( MOV,   3:1  ,   0:1  ,        )
+       ( JMP,        ,        , .L7    )
+.L4    (MOVS,   7:0  ,   3:2  , 0      )
+       ( JNZ,   7:0  ,        , .L1    )
+       ( JMP,        ,        , .L7    )
+.L1    (MOVS,   7:0  ,   3:3  , 0      )
+       ( JNZ,   7:0  ,        , .L2    )
+       ( JMP,        ,        , .L7    )
+.L2    ( MOV,   3:1  ,   0:2  ,        )
+.L7    ( RET,        ,        ,        )
