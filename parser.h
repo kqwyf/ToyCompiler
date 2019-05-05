@@ -28,7 +28,6 @@ struct Inst;
 class InstTable;
 class GrammaSymbol;
 class AnalyserStackItem;
-struct TempSymbolTable;
 class SymbolTable;
 struct SymbolTableEntry;
 struct SymbolTableEntryRef;
@@ -174,17 +173,10 @@ class SymbolTable : public vector<SymbolTableEntry> {
         bool busy;
         SymbolTable *parent;
         SymbolTable *funcTable;
-        TempSymbolTable *tempTable;
         map<int, int> nameMap;
         static list<SymbolTable*> tables;
         static SymbolTable *global;
         static int n;
-};
-
-struct TempSymbolTable : public vector<int> {
-    public:
-        TempSymbolTable(SymbolTable *symbolTable);
-        SymbolTable *symbolTable;
 };
 
 struct Inst {
