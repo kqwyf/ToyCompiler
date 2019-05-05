@@ -337,8 +337,13 @@ void showTable(SymbolTable *table, LexicalSymbolTable *nameTable) {
                 printf("float");
             else if(it->attr.arr->dataType == DT_BOOL)
                 printf("bool");
-            for(list<int>::iterator i = it->attr.arr->lens.begin(); i != it->attr.arr->lens.end(); i++)
-                printf("[%d]", *i);
+            int totalSize = (*nameTable)[it->attr.arr->lens.front()].value.numberValue.value.intValue;
+            for(vector<int>::iterator _i = it->attr.arr->lens.begin(), i = ++_i; i != it->attr.arr->lens.end(); i++) {
+                int nextSize = (*nameTable)[*i].value.numberValue.value.intValue;
+                printf("[%d]", totalSize / nextSize);
+                totalSize = nextSize;
+            }
+            printf("[%d]", totalSize);
         } else if(it->dataType == DT_BLOCK && it->name != 0) {
             printf("Table %d, Params#: %d", it->attr.func->table->number, it->attr.func->pCount);
         } else if(it->dataType == DT_BLOCK || it->dataType == DT_STRUCT || it->dataType == DT_STRUCT_DEF) {

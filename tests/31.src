@@ -1,0 +1,10 @@
+int main() {
+    int[5] a;
+    int[6] b;
+    int c;
+    if(a[1] + a[2] > b[2])
+        c = 1;
+    else
+        c = 2;
+    c = c + 1;
+}

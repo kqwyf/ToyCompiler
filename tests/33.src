@@ -1,0 +1,6 @@
+int print(bool a){}
+
+int main() {
+    int a, b;
+    print(a);
+}

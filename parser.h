@@ -79,6 +79,7 @@ class GrammaSymbol {
 struct ExpInfo {
     bool isTemp; // if this expression is related to a temp symbol in the symbol table
     SymbolTableEntryRef ref; // the related (maybe temp) symbol in the symbol table
+    SymbolTableEntryRef baseRef; // reference to the base symbol of array
     int offset; // offset relative to the symbol base address (in array and struct), -1 for simple identifier
     int ndim; // > 0 only when the expression is an array access expression, 0 for scalar
     list<int> trueList; // indices of instructions which depend on the true label of this symbol
@@ -119,7 +120,7 @@ struct FuncInfo {
 struct ArrayInfo {
     SymbolDataType dataType; // value in {DT_INT, DT_FLOAT, DT_BOOL}
     int ndim; // number of dimensions of this array
-    list<int> lens; // length of each dimension
+    vector<int> lens; // nameIndices of length of each dimension
 };
 
 struct ConstInfo {

@@ -9,9 +9,9 @@ debug: $(BUILD_PATH)
 $(BUILD_PATH):
 	mkdir $(BUILD_PATH)
 
-test: testl testlr testg testS
+test: testL testLR testG testS
 
-testl:
+testL:
 	@echo "Lexical analysis tests:"
 	./build/main -l ./tests/1.src | diff - ./tests/1.out
 	./build/main -l ./tests/2.src | diff - ./tests/2.out
@@ -23,7 +23,7 @@ testl:
 	./build/main -l ./tests/8.src | diff - ./tests/8.out
 	@echo ""
 
-testg:
+testG:
 	@echo "Gramma analysis tests:"
 	./build/main -g ./tests/9.src | diff - ./tests/9.out
 	./build/main -g ./tests/10.src | diff - ./tests/10.out
@@ -47,9 +47,11 @@ testS:
 	./build/main -s ./tests/28.src | diff - ./tests/28.out
 	./build/main -s ./tests/29.src | diff - ./tests/29.out
 	./build/main -s ./tests/30.src | diff - ./tests/30.out
+	./build/main -s ./tests/31.src | diff - ./tests/31.out
+	./build/main -s ./tests/32.src | diff - ./tests/32.out
 	@echo ""
 
-testlr:
+testLR:
 	@echo "LR(1) analysis table generator tests:"
 	python3 ./LR1.py ./tests/g1.grm -h | diff - ./tests/g1.out
 	python3 ./LR1.py ./tests/g2.grm -h | diff - ./tests/g2.out
