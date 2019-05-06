@@ -2,6 +2,8 @@
 
 This is a toy compiler frontend written in C++ for a C-like language, with a generic LR(1) grammar analysis table generator written in Python as the by-product.
 
+All the codes are tested with g++ 7.4.0 and Python 3.6.7.
+
 ## Usage
 
 - To compile it, run
@@ -32,7 +34,14 @@ This is a toy compiler frontend written in C++ for a C-like language, with a gen
 
 ## Language Definition
 
-The grammar of this language is defined in the file `lab.grm`.
+The grammar of this language is defined in the file `lab.grm`. The semantic of this language is basically the same as C.
+
+## Tests and Examples
+
+The tests (including the tests for the LR(1) grammar analysis table generator) and code examples can be found in the `tests/` directory. There are both positive tests (with well-defined grammar and semantic) and negative tests (with grammar errors or semantic errors). To test the program, build it firstly and run
+```bash
+make test
+```
 
 ## LR(1) Grammar Analysis Table Generator
 
