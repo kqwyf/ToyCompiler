@@ -62,7 +62,7 @@ The grammar of this language is defined in the file `lab.grm`.
          C -> c
      ```
    - Notice
-     Symbols `S`, `#`, and `|` is reserved. To use them in your grammar, modify the definitions of `START_SYMBOL`, `END_SYMBOL` and `OR_SYMBOL` in `LR1.py`.
+     Symbols `S`, `#`, and `|` are reserved. To use them in your grammar, modify the definitions of `START_SYMBOL`, `END_SYMBOL` and `OR_SYMBOL` in `LR1.py`.
 2. Run the generator.
    - Basic usage:
      ```bash
