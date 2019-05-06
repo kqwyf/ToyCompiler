@@ -1,0 +1,9 @@
+int print(int a) {}
+
+int main() {
+    if(1)
+        print(1);
+    while(1)
+        print(1);
+}
+

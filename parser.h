@@ -67,10 +67,11 @@ union ExternalAttribute {
 
 class GrammaSymbol {
     public:
-        GrammaSymbol(int code, int end, int type);
+        GrammaSymbol(int code, int end, int type, int row, int col);
         int code; // index of the first instruction in the instruction pool
         int end; // index of the last instruction in the instruction pool
         int type; // symbol type
+        int row, col; // location in the source code
         list<int> nextList; // indices of instructions which depend on the next inst of this symbol
         ExternalAttribute attr;
 };
@@ -87,6 +88,8 @@ struct ExpInfo {
 
 struct ExpsInfo {
     list<ExpInfo*> expList;
+    vector<int> rowList; // location of the expressions in the source code
+    vector<int> colList; // ditto
 };
 
 struct IdInfo {
@@ -95,6 +98,8 @@ struct IdInfo {
 
 struct IdsInfo {
     list<int> nameList;
+    list<int> rowList; // location of the identifiers in the source code
+    list<int> colList; // ditto
 };
 
 struct SelBeginInfo {
@@ -137,6 +142,7 @@ struct TypeInfo {
 
 struct TypeStructInfo {
     int name;
+    int row, col; // location of the identifier in the source code
 };
 
 class AnalyserStackItem {

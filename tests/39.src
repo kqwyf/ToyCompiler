@@ -1,0 +1,10 @@
+int[10][5] a;
+
+int print(bool a) {}
+
+int main() {
+    int b;
+    b = a[2];
+    b = a[1][2][3];
+    print(1);
+}

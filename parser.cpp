@@ -1,6 +1,4 @@
-// TODO: accurate error location
-// TODO: add auto type conversion
-// TODO: add nested struct support (production #54)
+// TODO: add nested struct support
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -14,7 +12,6 @@ using namespace std;
 static const SymbolTableEntryRef NULL_REF = {NULL, -1};
 
 // Parsing context
-static int row = -1, col = -1;
 int SymbolTable::n = 0;
 list<SymbolTable*> SymbolTable::tables;
 AnalyserStack *stack = NULL;
@@ -66,7 +63,7 @@ int link(GrammaSymbol &a, GrammaSymbol &b);
 int link(GrammaSymbol &a, int b);
 int link(int a, GrammaSymbol &b);
 int link(int a, int b);
-int sizeOf(TypeInfo *typ);
+int sizeOf(TypeInfo *typ, int row, int col);
 int sizeOf(SymbolDataType dataType);
 void enterTable(SymbolTable *table);
 int quitTable();
@@ -99,7 +96,7 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
         }
     }
     stack = new AnalyserStack();
-    GrammaSymbol endSymbol = GrammaSymbol(/*code=*/-1, /*end=*/-1, /*type=*/END_SYMBOL);
+    GrammaSymbol endSymbol = GrammaSymbol(/*code=*/-1, /*end=*/-1, /*type=*/END_SYMBOL, /*row=*/1, /*col=*/1);
     push(INIT_STATE, endSymbol);
     int i = 0;
     int returnCode = 0;
@@ -118,8 +115,6 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
             i++;
             continue;
         }
-        row = entry.row;
-        col = entry.col;
         bool err = false;
         char action = ACTION[current()][type];
 #ifdef DEBUG
@@ -133,7 +128,9 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
 #endif
                 return -1; // control should never reach here
             } else {
-                GrammaSymbol sym = GrammaSymbol(-1, -1, type);
+                GrammaSymbol sym = GrammaSymbol(-1, -1, type, entry.row, entry.col);
+                sym.row = entry.row;
+                sym.col = entry.col;
                 if(iTable != NULL) {
                     if(type == IDENTIFIER)
                         sym.attr.id->name = entry.index;
@@ -162,7 +159,8 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
 #endif
                     return -1;
                 }
-                GrammaSymbol sym = GrammaSymbol(-1, -1, PRO_LEFT[pro]);
+                GrammaSymbol &firstSym = (*stack)[stack->size() - PRO_LENGTH[pro]].sym;
+                GrammaSymbol sym = GrammaSymbol(-1, -1, PRO_LEFT[pro], firstSym.row, firstSym.col);
                 if(iTable != NULL) { // semantic analysis mode
                     int SAerr = semanticActions[pro](sym); // -2 for compile error
                     if(SAerr == -1) return -1;             // -1 for internal error
@@ -182,10 +180,14 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
             returnCode = -2;
         }
         if(err) {
-            printf(GRAMMA_ERROR_MESSAGE[current()], row, col, entry.source);
+            printf(GRAMMA_ERROR_MESSAGE[current()], entry.row, entry.col, entry.source);
             // error recovery
-            while(!stack->empty() && RECOVER_SYMBOL[current()].empty())
+            int row = entry.row, col = entry.col;
+            while(!stack->empty() && RECOVER_SYMBOL[current()].empty()) {
+                row = stack->back().sym.row;
+                col = stack->back().sym.col;
                 pop();
+            }
             if(stack->empty())
                 break;
             int symType = -1;
@@ -202,7 +204,7 @@ int parse(TokenTable &tokenTable, LexicalSymbolTable *lexicalSymbolTable, InstTa
             if(symType == -1)
                 break;
             // TODO: call the semantic action function with proper stack
-            GrammaSymbol sym = GrammaSymbol(-1, -1, symType);
+            GrammaSymbol sym = GrammaSymbol(-1, -1, symType, row, col);
             push(GOTO[current()][symType], sym);
         }
     }
@@ -291,7 +293,7 @@ int link(int a, int b) {
 /**
  * Returns: -1 for internal error, -2 for compile error.
  */
-int sizeOf(TypeInfo *typ) {
+int sizeOf(TypeInfo *typ, int row, int col) {
     int size = -1;
     if(typ->dataType == DT_INT)
         size = INT_SIZE;
@@ -506,9 +508,11 @@ SymbolDataType typeOf(ExpInfo *exp) {
     }
 }
 
-GrammaSymbol::GrammaSymbol(int code, int end, int type) : code(code),
-                                                          end(end),
-                                                          type(type) {
+GrammaSymbol::GrammaSymbol(int code, int end, int type, int row, int col) : code(code),
+                                                                            end(end),
+                                                                            type(type),
+                                                                            row(row),
+                                                                            col(col) {
     if(type == EXPRESSION || (EXPRESSION1 <= type && type <= EXPRESSION8))
         this->attr.exp = new ExpInfo();
     else if(type == EXPRESSION_S)
@@ -770,7 +774,7 @@ int SA_8(GrammaSymbol &sym) {
         symbolTable->freeTemp();
     SymbolTableEntryRef ref = {symbolTable->funcTable, 0};
     if(!typeMatch(ref, expression.attr.exp)) {
-        printf("Line %d, Col %d: Return value doesn't match the return type.\n", row, col);
+        printf("Line %d, Col %d: Return value doesn't match the return type.\n", expression.row, expression.col);
         return -2;
     }
     int retCode = instTable->gen(OP_RET, NULL_REF, NULL_REF, NULL_REF);
@@ -915,7 +919,7 @@ int SA_18(GrammaSymbol &sym) {
     GrammaSymbol type = (*stack)[n - 3].sym;
     GrammaSymbol identifier_s = (*stack)[n - 2].sym;
     sym.code = sym.end = -1;
-    int size = sizeOf(type.attr.typ);
+    int size = sizeOf(type.attr.typ, type.row, type.col);
     if(size == 0) {
 #ifdef DEBUG
         fprintf(stderr, "[ERROR] Invalid type in variant definition.\n");
@@ -925,10 +929,12 @@ int SA_18(GrammaSymbol &sym) {
         return size;
     }
     int err = 0;
-    list<int> *l = &(identifier_s.attr.ids->nameList);
-    for(list<int>::iterator it = l->begin(); it != l->end(); it++) {
+    list<int> &l = identifier_s.attr.ids->nameList;
+    list<int> &rl = identifier_s.attr.ids->rowList;
+    list<int> &cl = identifier_s.attr.ids->colList;
+    for(list<int>::iterator it = l.begin(), ri = rl.begin(), ci = cl.begin(); it != l.end(); it++, ri++, ci++) {
         if(symbolTable->existsSymbol(*it)) {
-            printf("Line %d, Col %d: Identifier has been declared before: %s\n", row, col, (*nameTable)[*it].value.stringValue);
+            printf("Line %d, Col %d: Identifier has been declared before: %s\n", *ri, *ci, (*nameTable)[*it].value.stringValue);
             err = -2;
             continue;
         }
@@ -981,7 +987,7 @@ int SA_22(GrammaSymbol &sym) {
     sym.code = sym.end = -1;
     int name = type_struct.attr.typ_str->name;
     if(symbolTable->existsSymbol(name)) {
-        printf("Line %d, Col %d: Identifier has been declared before: %s\n", row, col, (*nameTable)[name].value.stringValue);
+        printf("Line %d, Col %d: Identifier has been declared before: %s\n", type_struct.row, type_struct.col, (*nameTable)[name].value.stringValue);
         return -2;
     }
     SymbolTableEntryRef ref = symbolTable->newSymbol(name, IDENTIFIER, DT_STRUCT_DEF, 0);
@@ -1060,7 +1066,7 @@ int SA_27(GrammaSymbol &sym) {
     GrammaSymbol type = (*stack)[n - 2].sym;
     GrammaSymbol identifier = (*stack)[n - 1].sym;
     sym.code = sym.end = -1;
-    int size = sizeOf(type.attr.typ);
+    int size = sizeOf(type.attr.typ, type.row, type.col);
     if(size == 0) {
 #ifdef DEBUG
         fprintf(stderr, "[ERROR] Invalid type in parameter definition.\n");
@@ -1088,7 +1094,7 @@ int SA_28(GrammaSymbol &sym) {
     GrammaSymbol identifier = (*stack)[n - 1].sym;
     sym.code = sym.end = -1;
     sym.attr.pCount = 0;
-    int size = sizeOf(type.attr.typ);
+    int size = sizeOf(type.attr.typ, type.row, type.col);
     if(size == 0) {
 #ifdef DEBUG
         fprintf(stderr, "[ERROR] Invalid type in parameter definition.\n");
@@ -1116,7 +1122,7 @@ int SA_29(GrammaSymbol &sym) {
     GrammaSymbol identifier = (*stack)[n - 2].sym;
     sym.code = sym.end = -1;
     if(symbolTable->existsSymbol(identifier.attr.id->name)) {
-        printf("Line %d, Col %d: Identifier has been declared before: %s\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
+        printf("Line %d, Col %d: Identifier has been declared before: %s\n", identifier.row, identifier.col, (*nameTable)[identifier.attr.id->name].value.stringValue);
         return -2;
     }
     SymbolTableEntryRef ref = symbolTable->newSymbol(identifier.attr.id->name, IDENTIFIER, DT_BLOCK, 0);
@@ -1126,7 +1132,7 @@ int SA_29(GrammaSymbol &sym) {
     (*ref.table)[ref.index].attr.func->table = table;
     (*ref.table)[ref.index].offset = instTable->newLabel(-1); // pre-allocate a label for recursive calls
     enterTable(table);
-    int size = sizeOf(type.attr.typ);
+    int size = sizeOf(type.attr.typ, type.row, type.col);
     if(size == 0) {
 #ifdef DEBUG
         fprintf(stderr, "[ERROR] Invalid return type in function definition.\n");
@@ -1191,7 +1197,7 @@ int SA_32(GrammaSymbol &sym) {
     int name = type_struct.attr.typ_str->name;
     SymbolTableEntryRef ref = symbolTable->findSymbol(name);
     if(ref.table == NULL) {
-        printf("Line %d, Col %d: Undefined struct: %s.\n", row, col, (*nameTable)[name].value.stringValue);
+        printf("Line %d, Col %d: Undefined struct: %s.\n", type_struct.row, type_struct.col, (*nameTable)[name].value.stringValue);
         sym.attr.typ->attr.table = NULL;
         return -2;
     }
@@ -1239,7 +1245,7 @@ int SA_36(GrammaSymbol &sym) {
     GrammaSymbol constant = (*stack)[n - 2].sym;
     sym.code = sym.end = -1;
     if(constant.attr.con->dataType == DT_FLOAT) {
-        printf("Line %d, Col %d: The size of array should be an integer.\n", row, col);
+        printf("Line %d, Col %d: The size of array should be an integer.\n", constant.row, constant.col);
         return -2;
     } else if(constant.attr.con->dataType != DT_INT) {
 #ifdef DEBUG
@@ -1247,7 +1253,7 @@ int SA_36(GrammaSymbol &sym) {
 #endif
         return -1;
     } else if((*nameTable)[constant.attr.con->name].value.numberValue.value.intValue <= 0) {
-        printf("Line %d, Col %d: The size of array should be a positive integer.\n", row, col);
+        printf("Line %d, Col %d: The size of array should be a positive integer.\n", constant.row, constant.col);
         return -2;
     }
     sym.attr.typ->dataType = DT_ARRAY;
@@ -1273,7 +1279,7 @@ int SA_37(GrammaSymbol &sym) {
     sym.attr.typ->attr.arr->dataType = type_basic.attr.typ->dataType;
     sym.attr.typ->attr.arr->ndim = 0;
     if(constant.attr.con->dataType == DT_FLOAT) {
-        printf("Line %d, Col %d: The size of array should be an integer.\n", row, col);
+        printf("Line %d, Col %d: The size of array should be an integer.\n", constant.row, constant.col);
         return -2;
     } else if(constant.attr.con->dataType != DT_INT) {
 #ifdef DEBUG
@@ -1282,7 +1288,7 @@ int SA_37(GrammaSymbol &sym) {
 #endif
         return -1;
     } else if((*nameTable)[constant.attr.con->name].value.numberValue.value.intValue <= 0) {
-        printf("Line %d, Col %d: The size of array should be a positive integer.\n", row, col);
+        printf("Line %d, Col %d: The size of array should be a positive integer.\n", constant.row, constant.col);
         return -2;
     }
     sym.attr.typ->attr.arr->ndim = 1;
@@ -1299,6 +1305,8 @@ int SA_38(GrammaSymbol &sym) {
     GrammaSymbol identifier = (*stack)[n - 1].sym;
     sym.code = sym.end = -1;
     sym.attr.typ_str->name = identifier.attr.id->name;
+    sym.attr.typ_str->row = identifier.row;
+    sym.attr.typ_str->col = identifier.col;
     return 0;
 }
 
@@ -1369,7 +1377,7 @@ int SA_41(GrammaSymbol &sym) {
     sym.code = sym.end = -1;
     SymbolTableEntryRef expRef = expression.attr.exp->ref;
     if(!typeMatch(DT_BOOL, expression.attr.exp)) {
-        printf("Line %d, Col %d: The type of if-condition should be a boolean value.\n", row, col);
+        printf("Line %d, Col %d: The type of if-condition should be a boolean value.\n", expression.row, expression.col);
         return -2;
     }
     sym.code = expression.code;
@@ -1447,7 +1455,7 @@ int SA_44(GrammaSymbol &sym) {
     sym.code = sym.end = -1;
     SymbolTableEntryRef expRef = expression.attr.exp->ref;
     if(!typeMatch(DT_BOOL, expression.attr.exp)) {
-        printf("Line %d, Col %d: The type of while-condition should be a boolean value.\n", row, col);
+        printf("Line %d, Col %d: The type of while-condition should be a boolean value.\n", expression.row, expression.col);
         return -2;
     }
     sym.code = expression.code;
@@ -1484,10 +1492,10 @@ int SA_45(GrammaSymbol &sym) {
     SymbolTableEntryRef expRef = expression.attr.exp->ref;
     if((*expRef.table)[expRef.index].dataType == DT_ARRAY) { // array element
         if(expression.attr.exp->ndim < (*expRef.table)[expRef.index].attr.arr->ndim) {
-            printf("Line %d, Col %d: Too few dimensions for array.\n", row, col);
+            printf("Line %d, Col %d: Too few dimensions for array.\n", expression.row, expression.col);
             return -2;
         } else if(expression.attr.exp->ndim > (*expRef.table)[expRef.index].attr.arr->ndim) {
-            printf("Line %d, Col %d: Too many dimensions for array.\n", row, col);
+            printf("Line %d, Col %d: Too many dimensions for array.\n", expression.row, expression.col);
             return -2;
         }
         SymbolDataType dataType = typeOf(expression.attr.exp);
@@ -1531,6 +1539,10 @@ int SA_45(GrammaSymbol &sym) {
     sym.nextList.splice(sym.nextList.end(), expression.nextList);
     sym.attr.exps->expList.splice(sym.attr.exps->expList.end(), expression_s.attr.exps->expList);
     sym.attr.exps->expList.push_back(expression.attr.exp);
+    sym.attr.exps->rowList = expression_s.attr.exps->rowList;
+    sym.attr.exps->colList = expression_s.attr.exps->colList;
+    sym.attr.exps->rowList.push_back(expression.row);
+    sym.attr.exps->colList.push_back(expression.col);
     return 0;
 }
 
@@ -1546,10 +1558,10 @@ int SA_46(GrammaSymbol &sym) {
     SymbolTableEntryRef expRef = expression.attr.exp->ref;
     if((*expRef.table)[expRef.index].dataType == DT_ARRAY) { // array element
         if(expression.attr.exp->ndim < (*expRef.table)[expRef.index].attr.arr->ndim) {
-            printf("Line %d, Col %d: Too few dimensions for array.\n", row, col);
+            printf("Line %d, Col %d: Too few dimensions for array.\n", expression.row, expression.col);
             return -2;
         } else if(expression.attr.exp->ndim > (*expRef.table)[expRef.index].attr.arr->ndim) {
-            printf("Line %d, Col %d: Too many dimensions for array.\n", row, col);
+            printf("Line %d, Col %d: Too many dimensions for array.\n", expression.row, expression.col);
             return -2;
         }
         SymbolDataType dataType = typeOf(expression.attr.exp);
@@ -1588,6 +1600,8 @@ int SA_46(GrammaSymbol &sym) {
     }
     sym.nextList.splice(sym.nextList.end(), expression.nextList);
     sym.attr.exps->expList.push_back(expression.attr.exp);
+    sym.attr.exps->rowList.push_back(expression.row);
+    sym.attr.exps->colList.push_back(expression.col);
     return 0;
 }
 
@@ -1599,13 +1613,14 @@ int SA_47(GrammaSymbol &sym) {
     int n = stack->size();
     GrammaSymbol identifier = (*stack)[n - 4].sym;
     GrammaSymbol expression_s = (*stack)[n - 2].sym;
+    GrammaSymbol rightParen = (*stack)[n - 1].sym;
     sym.code = sym.end = -1;
     SymbolTableEntryRef ref = symbolTable->findSymbol(identifier.attr.id->name);
     if(ref.table == NULL) {
-        printf("Line %d, Col %d: Undefined function: %s\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
+        printf("Line %d, Col %d: Undefined function: %s\n", identifier.row, identifier.col, (*nameTable)[identifier.attr.id->name].value.stringValue);
         return -2;
     } else if((*ref.table)[ref.index].dataType != DT_BLOCK || (*ref.table)[ref.index].name == 0) {
-        printf("Line %d, Col %d: Not a function: %s\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
+        printf("Line %d, Col %d: Not a function: %s\n", identifier.row, identifier.col, (*nameTable)[identifier.attr.id->name].value.stringValue);
         return -2;
     }
     sym.code = expression_s.code;
@@ -1615,18 +1630,19 @@ int SA_47(GrammaSymbol &sym) {
             symbolTable->freeTemp();
     }
     // check the arguments
-    if(expression_s.attr.exps->expList.size() > (unsigned long)(*ref.table)[ref.index].attr.func->pCount) {
-        printf("Line %d, Col %d: Too many arguments.\n", row, col);
+    int pCount = (*ref.table)[ref.index].attr.func->pCount;
+    if(expression_s.attr.exps->expList.size() > (unsigned long)pCount) {
+        printf("Line %d, Col %d: Too many arguments.\n", expression_s.attr.exps->rowList[pCount], expression_s.attr.exps->colList[pCount]);
         return -2;
-    } else if(expression_s.attr.exps->expList.size() < (unsigned long)(*ref.table)[ref.index].attr.func->pCount) {
-        printf("Line %d, Col %d: Too few arguments.\n", row, col);
+    } else if(expression_s.attr.exps->expList.size() < (unsigned long)pCount) {
+        printf("Line %d, Col %d: Too few arguments.\n", rightParen.row, rightParen.col);
         return -2;
     }
     int i = 1;
     for(list<ExpInfo*>::iterator it = expression_s.attr.exps->expList.begin(); it != expression_s.attr.exps->expList.end(); it++) {
         SymbolTableEntryRef pRef = {(*ref.table)[ref.index].attr.func->table, i};
         if(!typeMatch(pRef, *it)) {
-            printf("Line %d, Col %d: Invalid argument type.\n", row, col);
+            printf("Line %d, Col %d: Invalid argument type.\n", expression_s.attr.exps->rowList[i - 1], expression_s.attr.exps->colList[i - 1]);
             return -2;
         }
         i++;
@@ -1664,18 +1680,19 @@ int SA_48(GrammaSymbol &sym) {
 #endif
     int n = stack->size();
     GrammaSymbol identifier = (*stack)[n - 3].sym;
+    GrammaSymbol rightParen = (*stack)[n - 1].sym;
     sym.code = sym.end = -1;
     SymbolTableEntryRef ref = symbolTable->findSymbol(identifier.attr.id->name);
     if(ref.table == NULL) {
-        printf("Line %d, Col %d: Undefined function: %s\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
+        printf("Line %d, Col %d: Undefined function: %s\n", identifier.row, identifier.col, (*nameTable)[identifier.attr.id->name].value.stringValue);
         return -2;
     } else if((*ref.table)[ref.index].dataType != DT_BLOCK) {
-        printf("Line %d, Col %d: %s is not function.\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
+        printf("Line %d, Col %d: %s is not a function.\n", identifier.row, identifier.col, (*nameTable)[identifier.attr.id->name].value.stringValue);
         return -2;
     }
     // check arguments
     if((*ref.table)[ref.index].attr.func->pCount > 0) {
-        printf("Line %d, Col %d: Too few arguments.\n", row, col);
+        printf("Line %d, Col %d: Too few arguments.\n", rightParen.row, rightParen.col);
         return -2;
     }
     SymbolTableEntry &returnValue = (*((*ref.table)[ref.index].attr.func->table))[0];
@@ -1723,7 +1740,7 @@ int SA_50(GrammaSymbol &sym) {
     sym.attr.exp->offset = -1;
     sym.attr.exp->ref = symbolTable->findSymbol(identifier.attr.id->name);
     if(sym.attr.exp->ref.table == NULL) {
-        printf("Line %d, Col %d: Undefined identifier: %s\n", row, col, (*nameTable)[identifier.attr.id->name].value.stringValue);
+        printf("Line %d, Col %d: Undefined identifier: %s\n", identifier.row, identifier.col, (*nameTable)[identifier.attr.id->name].value.stringValue);
         return -2;
     }
     return 0;
@@ -1775,7 +1792,7 @@ int SA_53(GrammaSymbol &sym) {
     sym.end = expression2.end;
     SymbolTableEntryRef ref = expression2.attr.exp->ref;
     if(!typeMatch(DT_BOOL, expression2.attr.exp)) {
-        printf("Line %d, Col %d: Invalid operand type.\n", row, col);
+        printf("Line %d, Col %d: Invalid operand type.\n", expression2.row, expression2.col);
         return -2;
     }
     // now it must be a boolean value
@@ -1804,13 +1821,14 @@ int SA_54(GrammaSymbol &sym) {
     fprintf(stderr, "[DEBUG] EXPRESSION2 -> - EXPRESSION2\n");
 #endif
     int n = stack->size();
+    GrammaSymbol negative = (*stack)[n - 2].sym;
     GrammaSymbol expression2 = (*stack)[n - 1].sym;
     sym.code = expression2.code;
     sym.end = expression2.end;
     SymbolTableEntryRef ref = expression2.attr.exp->ref;
     SymbolDataType dataType = (*ref.table)[ref.index].dataType;
     if(!typeMatch(DT_FLOAT, expression2.attr.exp)) {
-        printf("Line %d, Col %d: Invalid operation.\n", row, col);
+        printf("Line %d, Col %d: Invalid operation.\n", negative.row, negative.col);
         return -2;
     }
     int size = (*ref.table)[ref.index].size;
@@ -1858,6 +1876,7 @@ int SA_56(GrammaSymbol &sym) {
 #endif
     int n = stack->size();
     GrammaSymbol expression3 = (*stack)[n - 3].sym;
+    GrammaSymbol dot = (*stack)[n - 2].sym;
     GrammaSymbol identifier = (*stack)[n - 1].sym;
     sym.code = expression3.code;
     sym.end = expression3.end;
@@ -1868,13 +1887,13 @@ int SA_56(GrammaSymbol &sym) {
     sym.attr.exp->ref = ref;
     if((*ref.table)[ref.index].dataType != DT_STRUCT || expression3.attr.exp->offset >= 0) {
         // TODO: add nested struct support
-        printf("Line %d, Col %d: Can't use member operator on non-struct object.\n", row, col);
+        printf("Line %d, Col %d: Can't use member operator on non-struct object.\n", dot.row, dot.col);
         return -2;
     }
     SymbolTable *structTable = (*ref.table)[ref.index].attr.table;
     SymbolTableEntryRef idRef = structTable->findSymbol(identifier.attr.id->name);
     if(idRef.table == NULL) {
-        printf("Line %d, Col %d: Undefined member in struct.\n", row, col);
+        printf("Line %d, Col %d: Undefined member in struct.\n", identifier.row, identifier.col);
         return -2;
     }
     sym.attr.exp->offset = (*idRef.table)[idRef.index].offset;
@@ -1900,11 +1919,11 @@ int SA_57(GrammaSymbol &sym) {
         instTable->backPatch(expression3.nextList, label);
     }
     if(typeOf(expression.attr.exp) != DT_INT) {
-        printf("Line %d, Col %d: The index of array should be an integer.\n", row, col);
+        printf("Line %d, Col %d: The index of array should be an integer.\n", expression.row, expression.col);
         return -2;
     }
     if(expression3.attr.exp->ndim == 0 && typeOf(expression3.attr.exp) != DT_ARRAY) {
-        printf("Line %d, Col %d: Not an array.\n", row, col);
+        printf("Line %d, Col %d: Not an array.\n", expression3.row, expression3.col);
         return -2;
     }
     int postNum = 0;
@@ -1991,8 +2010,11 @@ int SA_59(GrammaSymbol &sym) {
     SymbolTableEntryRef ref3 = expression3.attr.exp->ref;
     SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
     SymbolDataType dataType3 = (*ref3.table)[ref3.index].dataType;
-    if(!typeMatch(DT_FLOAT, expression4.attr.exp) || !typeMatch(DT_FLOAT, expression3.attr.exp)) {
-        printf("Line %d, Col %d: Invalid operand types.\n", row, col);
+    if(!typeMatch(DT_FLOAT, expression4.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression4.row, expression4.col);
+        return -2;
+    } else if(!typeMatch(DT_FLOAT, expression3.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression3.row, expression3.col);
         return -2;
     }
     if(expression3.attr.exp->isTemp && expression3.attr.exp->ndim == 0)
@@ -2057,8 +2079,11 @@ int SA_60(GrammaSymbol &sym) {
     SymbolTableEntryRef ref3 = expression3.attr.exp->ref;
     SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
     SymbolDataType dataType3 = (*ref3.table)[ref3.index].dataType;
-    if(!typeMatch(DT_FLOAT, expression4.attr.exp) || !typeMatch(DT_FLOAT, expression3.attr.exp)) {
-        printf("Line %d, Col %d: Invalid operand types.\n", row, col);
+    if(!typeMatch(DT_FLOAT, expression4.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression4.row, expression4.col);
+        return -2;
+    } else if(!typeMatch(DT_FLOAT, expression3.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression3.row, expression3.col);
         return -2;
     }
     if(expression3.attr.exp->isTemp && expression3.attr.exp->ndim == 0)
@@ -2137,8 +2162,11 @@ int SA_62(GrammaSymbol &sym) {
     SymbolTableEntryRef ref4 = expression4.attr.exp->ref;
     SymbolDataType dataType5 = (*ref5.table)[ref5.index].dataType;
     SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
-    if(!typeMatch(DT_FLOAT, expression5.attr.exp) || !typeMatch(DT_FLOAT, expression4.attr.exp)) {
-        printf("Line %d, Col %d: Invalid operand types\n", row, col);
+    if(!typeMatch(DT_FLOAT, expression5.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression5.row, expression5.col);
+        return -2;
+    } else if(!typeMatch(DT_FLOAT, expression4.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression4.row, expression4.col);
         return -2;
     }
     if(expression4.attr.exp->isTemp && expression4.attr.exp->ndim == 0)
@@ -2203,8 +2231,11 @@ int SA_63(GrammaSymbol &sym) {
     SymbolTableEntryRef ref4 = expression4.attr.exp->ref;
     SymbolDataType dataType5 = (*ref5.table)[ref5.index].dataType;
     SymbolDataType dataType4 = (*ref4.table)[ref4.index].dataType;
-    if(!typeMatch(DT_FLOAT, expression5.attr.exp) || !typeMatch(DT_FLOAT, expression4.attr.exp)) {
-        printf("Line %d, Col %d: Invalid operand types\n", row, col);
+    if(!typeMatch(DT_FLOAT, expression5.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression5.row, expression5.col);
+        return -2;
+    } else if(!typeMatch(DT_FLOAT, expression4.attr.exp)) {
+        printf("Line %d, Col %d: Invalid operand types.\n", expression4.row, expression4.col);
         return -2;
     }
     if(expression4.attr.exp->isTemp && expression4.attr.exp->ndim == 0)
@@ -2282,7 +2313,7 @@ int SA_65(GrammaSymbol &sym) {
     SymbolTableEntryRef ref6 = expression6.attr.exp->ref;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     if(!typeMatch(expression6.attr.exp, expression5.attr.exp) && !typeMatch(expression5.attr.exp, expression6.attr.exp)) {
-        printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
+        printf("Line %d, Col %d: Can't compare operands of such types.\n", expression6.row, expression6.col);
         return -2;
     }
     bool skip5 = false, skip6 = false;
@@ -2370,7 +2401,7 @@ int SA_66(GrammaSymbol &sym) {
     SymbolTableEntryRef ref6 = expression6.attr.exp->ref;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     if(!typeMatch(expression6.attr.exp, expression5.attr.exp) && !typeMatch(expression5.attr.exp, expression6.attr.exp)) {
-        printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
+        printf("Line %d, Col %d: Can't compare operands of such types.\n", expression6.row, expression6.col);
         return -2;
     }
     bool skip5 = false, skip6 = false;
@@ -2458,7 +2489,7 @@ int SA_67(GrammaSymbol &sym) {
     SymbolTableEntryRef ref6 = expression6.attr.exp->ref;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     if(!typeMatch(DT_FLOAT, expression6.attr.exp) && !typeMatch(DT_FLOAT, expression5.attr.exp)) {
-        printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
+        printf("Line %d, Col %d: Can't compare operands of such types.\n", expression6.row, expression6.col);
         return -2;
     }
     if(expression5.attr.exp->isTemp && expression5.attr.exp->ndim == 0)
@@ -2518,7 +2549,7 @@ int SA_68(GrammaSymbol &sym) {
     SymbolTableEntryRef ref6 = expression6.attr.exp->ref;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     if(!typeMatch(DT_FLOAT, expression6.attr.exp) && !typeMatch(DT_FLOAT, expression5.attr.exp)) {
-        printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
+        printf("Line %d, Col %d: Can't compare operands of such types.\n", expression6.row, expression6.col);
         return -2;
     }
     if(expression5.attr.exp->isTemp && expression5.attr.exp->ndim == 0)
@@ -2578,7 +2609,7 @@ int SA_69(GrammaSymbol &sym) {
     SymbolTableEntryRef ref6 = expression6.attr.exp->ref;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     if(!typeMatch(DT_FLOAT, expression6.attr.exp) && !typeMatch(DT_FLOAT, expression5.attr.exp)) {
-        printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
+        printf("Line %d, Col %d: Can't compare operands of such types.\n", expression6.row, expression6.col);
         return -2;
     }
     if(expression5.attr.exp->isTemp && expression5.attr.exp->ndim == 0)
@@ -2638,7 +2669,7 @@ int SA_70(GrammaSymbol &sym) {
     SymbolTableEntryRef ref6 = expression6.attr.exp->ref;
     SymbolTableEntryRef ref5 = expression5.attr.exp->ref;
     if(!typeMatch(DT_FLOAT, expression6.attr.exp) && !typeMatch(DT_FLOAT, expression5.attr.exp)) {
-        printf("Line %d, Col %d: Can't compare operands of such types.\n", row, col);
+        printf("Line %d, Col %d: Can't compare operands of such types.\n", expression6.row, expression6.col);
         return -2;
     }
     if(expression5.attr.exp->isTemp && expression5.attr.exp->ndim == 0)
@@ -2727,8 +2758,11 @@ int SA_72(GrammaSymbol &sym) {
     sym.attr.exp->ndim = 0;
     sym.attr.exp->offset = -1;
     sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
-    if(!typeMatch(DT_BOOL, expression7.attr.exp) || !typeMatch(DT_BOOL, expression6.attr.exp)) {
-        printf("Line %d, Col %d: Operands should be boolean values.\n", row, col);
+    if(!typeMatch(DT_BOOL, expression7.attr.exp)) {
+        printf("Line %d, Col %d: Operands should be boolean values.\n", expression7.row, expression7.col);
+        return -2;
+    } else if(!typeMatch(DT_BOOL, expression6.attr.exp)) {
+        printf("Line %d, Col %d: Operands should be boolean values.\n", expression6.row, expression6.col);
         return -2;
     }
     link(sym, expression6);
@@ -2772,8 +2806,11 @@ int SA_73(GrammaSymbol &sym) {
     sym.attr.exp->ndim = 0;
     sym.attr.exp->offset = -1;
     sym.attr.exp->ref = symbolTable->newTemp(DT_BOOL, BOOL_SIZE);
-    if(!typeMatch(DT_BOOL, expression7.attr.exp) || !typeMatch(DT_BOOL, expression6.attr.exp)) {
-        printf("Line %d, Col %d: Operands should be boolean values.\n", row, col);
+    if(!typeMatch(DT_BOOL, expression7.attr.exp)) {
+        printf("Line %d, Col %d: Operands should be boolean values.\n", expression7.row, expression7.col);
+        return -2;
+    } else if(!typeMatch(DT_BOOL, expression6.attr.exp)) {
+        printf("Line %d, Col %d: Operands should be boolean values.\n", expression6.row, expression6.col);
         return -2;
     }
     link(sym, expression6);
@@ -2821,7 +2858,7 @@ int SA_75(GrammaSymbol &sym) {
     SymbolTableEntryRef ref7 = expression7.attr.exp->ref;
     SymbolTableEntryRef ref8 = expression8.attr.exp->ref;
     if(expression7.attr.exp->ndim == 0 && expression7.attr.exp->isTemp) {
-        printf("Line %d, Col %d: Can't assign a value to an rvalue.\n", row, col);
+        printf("Line %d, Col %d: Can't assign a value to an rvalue.\n", expression7.row, expression7.col);
         return -2;
     }
     sym.attr.exp->offset = expression7.attr.exp->offset;
@@ -2829,7 +2866,7 @@ int SA_75(GrammaSymbol &sym) {
     SymbolDataType dataType7 = (*ref7.table)[ref7.index].dataType;
     SymbolDataType dataType8 = (*ref8.table)[ref8.index].dataType;
     if(!typeMatch(expression7.attr.exp, expression8.attr.exp)) {
-        printf("Line %d, Col %d: Can't convert value type between such types.\n", row, col);
+        printf("Line %d, Col %d: Can't convert value type between such types.\n", expression8.row, expression8.col);
         return -2;
     }
     if(expression8.attr.exp->isTemp)
@@ -2913,6 +2950,10 @@ int SA_77(GrammaSymbol &sym) {
     sym.code = sym.end = -1;
     sym.attr.ids->nameList.splice(sym.attr.ids->nameList.end(), identifier_s.attr.ids->nameList);
     sym.attr.ids->nameList.push_back(identifier.attr.id->name);
+    sym.attr.ids->rowList.splice(sym.attr.ids->rowList.end(), identifier_s.attr.ids->rowList);
+    sym.attr.ids->colList.splice(sym.attr.ids->colList.end(), identifier_s.attr.ids->colList);
+    sym.attr.ids->rowList.push_back(identifier.row);
+    sym.attr.ids->colList.push_back(identifier.col);
     return 0;
 }
 
@@ -2925,6 +2966,8 @@ int SA_78(GrammaSymbol &sym) {
     GrammaSymbol identifier = (*stack)[n - 1].sym;
     sym.code = sym.end = -1;
     sym.attr.ids->nameList.push_back(identifier.attr.id->name);
+    sym.attr.ids->rowList.push_back(identifier.row);
+    sym.attr.ids->colList.push_back(identifier.col);
     return 0;
 }
 

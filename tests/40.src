@@ -1,0 +1,9 @@
+int print(int a) {}
+
+int main() {
+    int b;
+    a();
+    b();
+    print();
+    print(1, 2);
+}
