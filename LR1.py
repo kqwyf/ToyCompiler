@@ -6,6 +6,7 @@ import numpy as np
 
 START_SYMBOL = 'S'
 END_SYMBOL = '#'
+OR_SYMBOL = '|'
 
 grm_code_file = "grammar"
 
@@ -127,7 +128,7 @@ def read(f):
         if line.strip() == "":
             continue
         l = line.split()
-        if l[0] != '|':
+        if l[0] != OR_SYMBOL:
             first = l[0]
             if first not in smap:
                 smap[first] = len(syms)
@@ -452,7 +453,7 @@ def main(argv):
     elif cstyle:
         show_c()
     else:
-        show()
+        show_human()
 
 if __name__ == "__main__":
     main(sys.argv)
