@@ -79,6 +79,6 @@ The grammar of this language is defined in the file `lab.grm`.
 
    You have 2 ways to clear the conflicts if they exist.
    - Modify your grammar file and re-generate.
-   - Modify the generated cpp file by choose one of the choices for every conflict and remove the comment.
+   - Modify the generated cpp file by choosing one of the choices for every conflict and remove the comment.
 
    It is recommended to check the conflicts in human-readable mode and clear them in the generated cpp file.
